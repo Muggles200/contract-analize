@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { initializeServices } from "@/lib/startup";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,6 +23,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Initialize services on server startup
+  if (typeof window === 'undefined') {
+    initializeServices().catch(console.error);
+  }
+
   return (
     <html lang="en">
       <body

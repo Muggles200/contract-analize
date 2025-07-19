@@ -1,0 +1,128 @@
+import NextAuth from "next-auth"
+import { PrismaAdapter } from "@auth/prisma-adapter"
+import { prisma } from "./db"
+import Google from "next-auth/providers/google"
+import GitHub from "next-auth/providers/github"
+import Credentials from "next-auth/providers/credentials"
+import bcrypt from "bcryptjs"
+// import { config } from "./env"
+
+// Extend NextAuth types to include organizationId
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+      email: string
+      name?: string | null
+      image?: string | null
+      organizationId?: string
+    }
+  }
+  
+  interface User {
+    id: string
+    email: string
+    name?: string | null
+    image?: string | null
+    organizationId?: string
+  }
+}
+
+
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+    GitHub({
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    }),
+    Credentials({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials: any) {
+        if (!credentials?.email || !credentials?.password) {
+          return null
+        }
+
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          }) as any
+
+          if (!user || !user.password) {
+            return null
+          }
+
+          // Email verification is temporarily disabled
+          // Check if email is verified
+          // if (!user.emailVerified) {
+          //   // Return null to indicate authentication failure, but log the specific reason
+          //   console.log('Email not verified for user:', user.email)
+          //   return null
+          // }
+
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+
+          if (!isPasswordValid) {
+            return null
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+          }
+        } catch (error) {
+          console.error('Database error during authentication:', error)
+          return null
+        }
+      }
+    })
+  ],
+  session: {
+    strategy: "jwt",
+  },
+  pages: {
+    signIn: "/auth/login",
+    error: "/auth/error",
+  },
+  callbacks: {
+    async session({ session, token }) {
+      if (token.sub && session.user) {
+        session.user.id = token.sub
+        // Add organization information to session
+        if ((token as any).organizationId) {
+          session.user.organizationId = (token as any).organizationId
+        }
+      }
+      return session
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.sub = user.id
+        // Get user's organization membership
+        try {
+          const membership = await prisma.organizationMember.findFirst({
+            where: { userId: user.id },
+            select: { organizationId: true }
+          })
+          if (membership) {
+            ;(token as any).organizationId = membership.organizationId
+          }
+        } catch (error) {
+          console.error('Error fetching user organization:', error)
+        }
+      }
+      return token
+    },
+  },
+}) 

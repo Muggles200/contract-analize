@@ -1,0 +1,447 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id            String          @id @default(cuid())
+  name          String?
+  email         String          @unique
+  password      String?
+  emailVerified DateTime?
+  image         String?
+  verificationToken String?     @unique
+  verificationExpires DateTime?
+  resetToken    String?         @unique
+  resetExpires  DateTime?
+  accounts      Account[]
+  sessions      Session[]
+  // Optional for WebAuthn support
+  Authenticator Authenticator[]
+
+  // Relations to other models
+  organizationMemberships OrganizationMember[]
+  subscriptions           Subscription[]
+  contracts               Contract[]
+  analysisResults         AnalysisResult[]
+  usageLogs               UsageLog[]
+  analyticsEvents         AnalyticsEvent[]
+  userActivities          UserActivity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([createdAt])
+  @@index([verificationToken])
+  @@index([resetToken])
+  @@map("users")
+}
+ 
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@id([provider, providerAccountId])
+  @@index([userId])
+  @@index([provider, providerAccountId])
+  @@map("accounts")
+}
+ 
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expires])
+  @@map("sessions")
+}
+ 
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+ 
+  @@id([identifier, token])
+  @@index([expires])
+  @@map("verification_tokens")
+}
+ 
+// Optional for WebAuthn support
+model Authenticator {
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@id([userId, credentialID])
+  @@index([userId])
+  @@map("authenticators")
+}
+
+// Organization model
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+  settings    Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  members         OrganizationMember[]
+  contracts       Contract[]
+  analysisResults AnalysisResult[]
+  usageLogs       UsageLog[]
+  subscriptions   Subscription[]
+  analyticsEvents AnalyticsEvent[]
+  userActivities  UserActivity[]
+
+  @@index([slug])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("organizations")
+}
+
+// Organization members with roles
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  role           String   @default("member")
+  permissions    Json     @default("[]")
+  joinedAt       DateTime @default(now())
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([role])
+  @@index([organizationId, role])
+  @@map("organization_members")
+}
+
+// Subscription model for billing
+model Subscription {
+  id                     String    @id @default(cuid())
+  userId                 String
+  organizationId         String?
+  stripeCustomerId       String?
+  stripeSubscriptionId   String?
+  stripePriceId          String?
+  status                 String
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean   @default(false)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  // Relations
+  user                   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization           Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+  @@index([userId, status])
+  @@index([organizationId, status])
+  @@index([currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+// Contract model
+model Contract {
+  id             String    @id @default(cuid())
+  userId         String
+  organizationId String?
+  fileName       String
+  fileSize       BigInt
+  fileType       String
+  blobUrl        String
+  status         String    @default("pending")
+  contractName   String?
+  contractType   String?
+  tags           String[]
+  metadata       Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  // Relations
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  analysisResults AnalysisResult[]
+  contractFiles  ContractFile[]
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([contractType])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@index([userId, deletedAt])
+  @@index([organizationId, deletedAt])
+  @@index([userId, status])
+  @@index([organizationId, status])
+  @@index([userId, contractType])
+  @@index([organizationId, contractType])
+  @@index([userId, createdAt])
+  @@index([organizationId, createdAt])
+  @@index([userId, status, deletedAt])
+  @@index([organizationId, status, deletedAt])
+  @@map("contracts")
+}
+
+// Analysis results model
+model AnalysisResult {
+  id                String    @id @default(cuid())
+  contractId        String
+  userId            String
+  organizationId    String?
+  status            AnalysisStatus    @default(PENDING)
+  analysisType      String    @default("basic")
+  priority          String    @default("normal")
+  progress          Int       @default(0)
+  retryCount        Int       @default(0)
+  maxRetries        Int       @default(3)
+  customParameters  Json?
+  results           Json?
+  summary           String?
+  totalClauses      Int?
+  totalRisks        Int?
+  totalRecommendations Int?
+  highRiskCount     Int?
+  criticalRiskCount Int?
+  processingTime    Int?
+  tokensUsed        Int?
+  estimatedCost     Decimal?  @db.Decimal(10, 4)
+  modelUsed         String?
+  confidenceScore   Decimal?  @db.Decimal(3, 2)
+  errorMessage      String?
+  startedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  completedAt       DateTime?
+
+  // Relations
+  contract          Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization      Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([analysisType])
+  @@index([createdAt])
+  @@index([completedAt])
+  @@index([userId, status])
+  @@index([organizationId, status])
+  @@index([contractId, status])
+  @@index([userId, analysisType])
+  @@index([organizationId, analysisType])
+  @@index([userId, createdAt])
+  @@index([organizationId, createdAt])
+  @@index([contractId, createdAt])
+  @@map("analysis_results")
+}
+
+// Usage logs model
+model UsageLog {
+  id             String    @id @default(cuid())
+  userId         String
+  organizationId String?
+  action         String
+  resourceType   String?
+  resourceId     String?
+  metadata       Json?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime  @default(now())
+
+  // Relations
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([createdAt])
+  @@index([userId, action])
+  @@index([organizationId, action])
+  @@index([userId, createdAt])
+  @@index([organizationId, createdAt])
+  @@index([userId, action, createdAt])
+  @@index([organizationId, action, createdAt])
+  @@map("usage_logs")
+}
+
+// File storage models
+model ContractFile {
+  id             String    @id @default(cuid())
+  contractId     String
+  fileName       String
+  filePath       String
+  fileSize       BigInt
+  mimeType       String
+  checksum       String?
+  isProcessed    Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  contract       Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  fileMetadata   FileMetadata?
+
+  @@index([contractId])
+  @@index([isProcessed])
+  @@index([mimeType])
+  @@index([createdAt])
+  @@index([contractId, isProcessed])
+  @@index([contractId, mimeType])
+  @@map("contract_files")
+}
+
+model FileMetadata {
+  id              String    @id @default(cuid())
+  contractFileId  String    @unique
+  extractedText   String?
+  pageCount       Int?
+  language        String?
+  ocrConfidence   Decimal?  @db.Decimal(3, 2)
+  processingStatus String   @default("pending")
+  errorMessage    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  contractFile    ContractFile @relation(fields: [contractFileId], references: [id], onDelete: Cascade)
+
+  @@index([processingStatus])
+  @@index([language])
+  @@index([createdAt])
+  @@index([contractFileId, processingStatus])
+  @@map("file_metadata")
+}
+
+// Analytics models
+model AnalyticsEvent {
+  id             String    @id @default(cuid())
+  userId         String?
+  organizationId String?
+  eventType      String
+  eventData      Json?
+  sessionId      String?
+  pageUrl        String?
+  referrer       String?
+  userAgent      String?
+  ipAddress      String?
+  timestamp      DateTime  @default(now())
+
+  // Relations
+  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([eventType])
+  @@index([timestamp])
+  @@index([sessionId])
+  @@index([userId, eventType])
+  @@index([organizationId, eventType])
+  @@index([userId, timestamp])
+  @@index([organizationId, timestamp])
+  @@index([eventType, timestamp])
+  @@index([userId, eventType, timestamp])
+  @@index([organizationId, eventType, timestamp])
+  @@map("analytics_events")
+}
+
+model UserActivity {
+  id             String    @id @default(cuid())
+  userId         String
+  organizationId String?
+  activityType   String
+  description    String?
+  metadata       Json?
+  duration       Int?      // in seconds
+  createdAt      DateTime  @default(now())
+
+  // Relations
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([activityType])
+  @@index([createdAt])
+  @@index([userId, activityType])
+  @@index([organizationId, activityType])
+  @@index([userId, createdAt])
+  @@index([organizationId, createdAt])
+  @@index([activityType, createdAt])
+  @@index([userId, activityType, createdAt])
+  @@index([organizationId, activityType, createdAt])
+  @@map("user_activity")
+}
+
+model PerformanceMetric {
+  id             String    @id @default(cuid())
+  metricName     String
+  metricValue    Decimal   @db.Decimal(10, 4)
+  metricUnit     String?
+  context        Json?
+  timestamp      DateTime  @default(now())
+
+  @@index([metricName])
+  @@index([timestamp])
+  @@index([metricName, timestamp])
+  @@map("performance_metrics")
+} 
