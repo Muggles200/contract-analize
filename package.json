@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "prisma generate",
     "test": "npm run test:ai && npm run test:long-contracts",
     "test:ai": "tsx scripts/test-ai.ts",
     "test:ai:simple": "tsx scripts/test-ai-simple.ts",
