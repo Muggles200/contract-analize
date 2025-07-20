@@ -7,6 +7,11 @@ import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 // import { config } from "./env"
 
+// Ensure this only runs on the server
+if (typeof window !== 'undefined') {
+  throw new Error('Auth configuration cannot be imported on the client side')
+}
+
 // Extend NextAuth types to include organizationId
 declare module "next-auth" {
   interface Session {
