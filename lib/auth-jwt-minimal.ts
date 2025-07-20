@@ -5,9 +5,10 @@ import Google from "next-auth/providers/google"
 import GitHub from "next-auth/providers/github"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
-// import { config } from "./env"
 
-// Extend NextAuth types to include organizationId
+// Minimal JWT configuration - use only if you prefer JWT over database sessions
+// To use this: rename this file to auth.ts and rename current auth.ts to auth-database.ts
+
 declare module "next-auth" {
   interface Session {
     user: {
@@ -27,8 +28,6 @@ declare module "next-auth" {
     organizationId?: string
   }
 }
-
-
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -61,16 +60,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return null
           }
 
-          // Email verification is temporarily disabled
-          // Check if email is verified
-          // if (!user.emailVerified) {
-          //   // Return null to indicate authentication failure, but log the specific reason
-          //   console.log('Email not verified for user:', user.email)
-          //   return null
-          // }
-
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
-
           if (!isPasswordValid) {
             return null
           }
@@ -89,9 +79,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     })
   ],
   session: {
-    strategy: "database",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours
+    strategy: "jwt",
+    maxAge: 7 * 24 * 60 * 60, // Shorter: 7 days instead of 30
+    updateAge: 6 * 60 * 60, // Update every 6 hours instead of 24
   },
   cookies: {
     sessionToken: {
@@ -101,27 +91,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-      },
-    },
-    callbackUrl: {
-      name: process.env.NODE_ENV === 'production' ? '__Secure-authjs.callback-url' : 'authjs.callback-url',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 15 * 60, // 15 minutes
-      },
-    },
-    csrfToken: {
-      name: process.env.NODE_ENV === 'production' ? '__Host-authjs.csrf-token' : 'authjs.csrf-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 15 * 60, // 15 minutes
+        maxAge: 7 * 24 * 60 * 60, // 7 days
       },
     },
   },
@@ -130,24 +100,47 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: "/auth/error",
   },
   callbacks: {
-    async session({ session, user }) {
-      if (user && session.user) {
-        session.user.id = user.id
-        
-        // Get user's organization membership efficiently
-        try {
-          const membership = await prisma.organizationMember.findFirst({
-            where: { userId: user.id },
-            select: { organizationId: true }
-          })
-          if (membership) {
-            session.user.organizationId = membership.organizationId
-          }
-        } catch (error) {
-          console.error('Error fetching user organization:', error)
+    async session({ session, token }) {
+      if (token.sub && session.user) {
+        session.user.id = token.sub
+        // Only add organizationId if it exists and is minimal
+        if (token.organizationId && typeof token.organizationId === 'string') {
+          session.user.organizationId = token.organizationId
         }
       }
       return session
+    },
+    async jwt({ token, user, trigger }) {
+      // Only store absolutely essential data
+      if (user) {
+        token.sub = user.id
+        
+        // Only fetch organization on initial sign-in or explicit update
+        if (trigger === 'signIn' || trigger === 'update') {
+          try {
+            const membership = await prisma.organizationMember.findFirst({
+              where: { userId: user.id },
+              select: { organizationId: true }
+            })
+            token.organizationId = membership?.organizationId || null
+          } catch (error) {
+            console.error('Error fetching user organization:', error)
+            token.organizationId = null
+          }
+        }
+      }
+      
+      // Return only essential fields - NO extra data
+      return {
+        sub: token.sub,
+        email: token.email,
+        name: token.name,
+        picture: token.picture,
+        organizationId: token.organizationId,
+        iat: token.iat,
+        exp: token.exp,
+        jti: token.jti,
+      }
     },
   },
 }) 
