@@ -146,7 +146,7 @@ export default function OrganizationSettings({
       ...prev,
       [category]: {
         ...prev[category as keyof typeof prev],
-        [setting]: !prev[category as keyof typeof prev][setting],
+        [setting]: !(prev[category as keyof typeof prev] as any)[setting],
       },
     }));
   };

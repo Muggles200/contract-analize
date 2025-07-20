@@ -321,9 +321,9 @@ export default function ReportTemplates({
                   {template.description}
                 </p>
                 
-                {!template.isPredefined && template.createdAt && (
+                {!template.isPredefined && 'createdAt' in template && (template as any).createdAt && (
                   <p className="text-xs text-gray-400">
-                    Created: {new Date(template.createdAt).toLocaleDateString()}
+                    Created: {new Date((template as any).createdAt).toLocaleDateString()}
                   </p>
                 )}
               </div>

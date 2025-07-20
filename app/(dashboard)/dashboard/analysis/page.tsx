@@ -104,6 +104,10 @@ export default async function AnalysisDashboardPage() {
       },
       _count: {
         id: true
+      },
+      orderBy: {
+        status: 'asc',
+        analysisType: 'asc'
       }
     }),
     
@@ -113,6 +117,9 @@ export default async function AnalysisDashboardPage() {
       where: { userId: session.user.id },
       _count: {
         id: true
+      },
+      orderBy: {
+        status: 'asc'
       }
     })
   ]);

@@ -27,6 +27,7 @@ interface Organization {
   slug: string;
   description?: string | null;
   logoUrl?: string | null;
+  settings: any;
   createdAt: string;
   updatedAt: string;
   members: Array<{

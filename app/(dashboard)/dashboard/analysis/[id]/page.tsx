@@ -29,12 +29,13 @@ import ExportResults from "./components/ExportResults";
 import ShareAnalysis from "./components/ShareAnalysis";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function AnalysisResultsPage({ params }: PageProps) {
+  const { id } = await params;
   const session = await auth();
   
   if (!session?.user) {
@@ -44,7 +45,7 @@ export default async function AnalysisResultsPage({ params }: PageProps) {
   // Fetch analysis result with contract details
   const analysis = await prisma.analysisResult.findFirst({
     where: {
-      id: params.id,
+      id: id,
       userId: session.user.id
     },
     include: {

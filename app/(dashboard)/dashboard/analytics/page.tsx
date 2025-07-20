@@ -116,6 +116,9 @@ export default async function AnalyticsPage({
         _count: {
           action: true,
         },
+        orderBy: {
+          action: 'asc',
+        },
       }),
     ]),
 
@@ -184,6 +187,9 @@ export default async function AnalyticsPage({
       _count: {
         contractType: true,
       },
+      orderBy: {
+        contractType: 'asc',
+      },
     }),
 
     // Common risks
@@ -230,6 +236,14 @@ export default async function AnalyticsPage({
   // Process overview data
   const [totalContracts, totalAnalyses, contractsThisPeriod, analysesThisPeriod, usageStats] = overviewData;
 
+  // Transform usage stats to match expected interface
+  const transformedUsageStats = usageStats.map(stat => ({
+    action: stat.action,
+    _count: {
+      action: typeof stat._count === 'object' && stat._count?.action ? stat._count.action : 0
+    }
+  }));
+
   // Process time series data
   const timeSeriesProcessed = timeSeriesData.reduce((acc, item) => {
     const date = item.createdAt.toISOString().split('T')[0];
@@ -261,10 +275,35 @@ export default async function AnalyticsPage({
       totalAnalyses,
       contractsThisPeriod,
       analysesThisPeriod,
-      usageStats,
+      usageStats: transformedUsageStats,
     },
-    performance: performanceData,
-    cost: costData,
+    performance: {
+      _avg: {
+        processingTime: performanceData._avg.processingTime ? Number(performanceData._avg.processingTime) : null,
+        confidenceScore: performanceData._avg.confidenceScore ? Number(performanceData._avg.confidenceScore) : null,
+      },
+      _min: {
+        processingTime: performanceData._min.processingTime ? Number(performanceData._min.processingTime) : null,
+      },
+      _max: {
+        processingTime: performanceData._max.processingTime ? Number(performanceData._max.processingTime) : null,
+      },
+      _count: {
+        id: performanceData._count.id,
+      },
+    },
+    cost: {
+      _sum: {
+        estimatedCost: costData._sum.estimatedCost ? Number(costData._sum.estimatedCost) : null,
+        tokensUsed: costData._sum.tokensUsed ? Number(costData._sum.tokensUsed) : null,
+      },
+      _avg: {
+        estimatedCost: costData._avg.estimatedCost ? Number(costData._avg.estimatedCost) : null,
+      },
+      _count: {
+        id: costData._count.id,
+      },
+    },
     contractTypes,
     commonRisks: Object.entries(riskData)
       .map(([type, count]) => ({ type, count }))

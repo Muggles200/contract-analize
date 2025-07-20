@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Upload, X, Loader2 } from 'lucide-react';
 
@@ -25,9 +25,23 @@ export default function AvatarUpload({ user }: AvatarUploadProps) {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(user.image || null);
 
+  // Cleanup preview URL when component unmounts or previewUrl changes
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Clean up previous preview URL if it's a blob URL
+    if (previewUrl && previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(previewUrl);
+    }
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -41,10 +55,37 @@ export default function AvatarUpload({ user }: AvatarUploadProps) {
       return;
     }
 
-    // Create preview URL
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    setMessage(null);
+    // Validate image dimensions
+    const img = new Image();
+    const validationUrl = URL.createObjectURL(file);
+    
+    img.onload = () => {
+      URL.revokeObjectURL(validationUrl);
+      
+      // Check minimum dimensions (100x100)
+      if (img.width < 100 || img.height < 100) {
+        setMessage({ type: 'error', text: 'Image must be at least 100x100 pixels' });
+        return;
+      }
+      
+      // Check maximum dimensions (2048x2048)
+      if (img.width > 2048 || img.height > 2048) {
+        setMessage({ type: 'error', text: 'Image must be no larger than 2048x2048 pixels' });
+        return;
+      }
+      
+      // Create preview URL (separate from validation URL)
+      const newPreviewUrl = URL.createObjectURL(file);
+      setPreviewUrl(newPreviewUrl);
+      setMessage(null);
+    };
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(validationUrl);
+      setMessage({ type: 'error', text: 'Invalid image file' });
+    };
+    
+    img.src = validationUrl;
   };
 
   const handleUpload = async () => {
@@ -58,41 +99,29 @@ export default function AvatarUpload({ user }: AvatarUploadProps) {
     setMessage(null);
 
     try {
-      // For now, we'll use a simple approach with base64 encoding
-      // In a real app, you'd upload to a cloud storage service like AWS S3 or Vercel Blob
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64String = e.target?.result as string;
-        
-        try {
-          const response = await fetch('/api/user/profile', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              image: base64String,
-            }),
-          });
+      const formData = new FormData();
+      formData.append('file', file);
 
-          const data = await response.json();
+      const response = await fetch('/api/user/avatar', {
+        method: 'POST',
+        body: formData,
+      });
 
-          if (response.ok) {
-            setMessage({ type: 'success', text: 'Profile picture updated successfully!' });
-            router.refresh();
-          } else {
-            setMessage({ type: 'error', text: data.error || 'Failed to update profile picture' });
-          }
-        } catch (error) {
-          setMessage({ type: 'error', text: 'An error occurred while uploading the image' });
-        } finally {
-          setIsLoading(false);
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Profile picture updated successfully!' });
+        // Update preview with the new URL from the server
+        if (data.imageUrl) {
+          setPreviewUrl(data.imageUrl);
         }
-      };
-
-      reader.readAsDataURL(file);
+        router.refresh();
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to update profile picture' });
+      }
     } catch (error) {
-      setMessage({ type: 'error', text: 'An error occurred while processing the image' });
+      setMessage({ type: 'error', text: 'An error occurred while uploading the image' });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -102,14 +131,8 @@ export default function AvatarUpload({ user }: AvatarUploadProps) {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/user/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image: null,
-        }),
+      const response = await fetch('/api/user/avatar', {
+        method: 'DELETE',
       });
 
       const data = await response.json();
@@ -176,7 +199,7 @@ export default function AvatarUpload({ user }: AvatarUploadProps) {
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
           />
           <p className="mt-1 text-sm text-gray-500">
-            JPG, PNG, or GIF. Max size 5MB.
+            JPG, PNG, or GIF. Max size 5MB. Min 100x100px, Max 2048x2048px.
           </p>
         </div>
 

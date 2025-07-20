@@ -226,6 +226,18 @@ export default async function ReportsPage({
     return acc;
   }, {} as Record<string, Record<string, number>>);
 
+  // Transform scheduled reports to match interface
+  const transformedScheduledReports = scheduledReports.map(report => ({
+    ...report,
+    description: report.description || undefined,
+    dayOfWeek: report.dayOfWeek || undefined,
+    dayOfMonth: report.dayOfMonth || undefined,
+    timeOfDay: report.timeOfDay || undefined,
+    recipients: Array.isArray(report.recipients) ? (report.recipients as string[]) : undefined,
+    lastRunAt: report.lastRunAt || undefined,
+    nextRunAt: report.nextRunAt || undefined,
+  }));
+
   const reportData = {
     contracts: contractsData,
     analyses: analysesData,
@@ -234,7 +246,7 @@ export default async function ReportsPage({
     risks: Object.entries(processedRiskData)
       .map(([type, count]) => ({ type, count }))
       .sort((a, b) => b.count - a.count),
-    scheduledReports,
+    scheduledReports: transformedScheduledReports,
     reportHistory,
     dateRange: {
       start: startDate,
@@ -281,7 +293,7 @@ export default async function ReportsPage({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Scheduled Reports */}
         <ScheduledReports 
-          scheduledReports={scheduledReports}
+          scheduledReports={transformedScheduledReports}
           organizationId={organizationId}
         />
 
@@ -295,7 +307,7 @@ export default async function ReportsPage({
 
       {/* Report History */}
       <ReportHistory 
-        reportHistory={reportHistory}
+        reportHistory={reportHistory as any}
         organizationId={organizationId}
       />
     </div>

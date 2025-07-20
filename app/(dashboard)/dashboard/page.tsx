@@ -79,6 +79,9 @@ export default async function DashboardPage() {
       },
       _count: {
         action: true
+      },
+      orderBy: {
+        action: 'asc'
       }
     })
   ]);

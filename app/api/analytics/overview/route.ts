@@ -94,6 +94,9 @@ export async function GET(request: NextRequest) {
         _count: {
           action: true,
         },
+        orderBy: {
+          action: 'asc',
+        },
       }),
       
       // Recent activity
@@ -104,15 +107,6 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { createdAt: 'desc' },
         take: 10,
-        include: {
-          contract: {
-            select: {
-              id: true,
-              fileName: true,
-              contractName: true,
-            },
-          },
-        },
       }),
     ])
 
