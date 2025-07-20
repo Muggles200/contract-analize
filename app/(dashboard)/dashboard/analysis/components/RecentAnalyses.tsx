@@ -14,6 +14,7 @@ import {
   Calendar,
   Zap
 } from 'lucide-react';
+import AnalysisStatusBadge from './AnalysisStatusBadge';
 
 interface Analysis {
   id: string;
@@ -185,12 +186,7 @@ export default function RecentAnalyses({ analyses }: RecentAnalysesProps) {
                 </div>
                 
                 <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2">
-                    {getStatusIcon(analysis.status)}
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(analysis.status)}`}>
-                      {analysis.status.charAt(0).toUpperCase() + analysis.status.slice(1)}
-                    </span>
-                  </div>
+                  <AnalysisStatusBadge status={analysis.status} size="sm" />
                   
                   <div className="flex items-center space-x-1">
                     <Link

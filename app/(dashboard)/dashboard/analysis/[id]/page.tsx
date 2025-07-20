@@ -105,26 +105,36 @@ export default async function AnalysisResultsPage({ params }: PageProps) {
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'complete':
+    const normalizedStatus = status.toLowerCase();
+    switch (normalizedStatus) {
+      case 'completed':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'processing':
         return <Clock className="w-5 h-5 text-blue-500" />;
-      case 'error':
+      case 'failed':
         return <XCircle className="w-5 h-5 text-red-500" />;
+      case 'pending':
+        return <Clock className="w-5 h-5 text-yellow-500" />;
+      case 'cancelled':
+        return <XCircle className="w-5 h-5 text-gray-500" />;
       default:
         return <Clock className="w-5 h-5 text-gray-500" />;
     }
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'complete':
+    const normalizedStatus = status.toLowerCase();
+    switch (normalizedStatus) {
+      case 'completed':
         return 'text-green-700 bg-green-50 border-green-200';
       case 'processing':
         return 'text-blue-700 bg-blue-50 border-blue-200';
-      case 'error':
+      case 'failed':
         return 'text-red-700 bg-red-50 border-red-200';
+      case 'pending':
+        return 'text-yellow-700 bg-yellow-50 border-yellow-200';
+      case 'cancelled':
+        return 'text-gray-700 bg-gray-50 border-gray-200';
       default:
         return 'text-gray-700 bg-gray-50 border-gray-200';
     }

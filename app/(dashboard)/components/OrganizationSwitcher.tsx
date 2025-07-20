@@ -24,36 +24,26 @@ export default function OrganizationSwitcher({ currentOrgId, userId }: Organizat
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, this would fetch from an API
     const fetchOrganizations = async () => {
       try {
-        // Mock data for now - replace with actual API call
-        const mockOrgs: Organization[] = [
-          {
-            id: 'org-1',
-            name: 'Acme Corporation',
-            slug: 'acme-corp',
-            description: 'Main organization'
-          },
-          {
-            id: 'org-2',
-            name: 'Startup Ventures',
-            slug: 'startup-ventures',
-            description: 'Side project'
-          }
-        ];
-
-        setOrganizations(mockOrgs);
+        const response = await fetch('/api/organizations?limit=10');
+        if (!response.ok) throw new Error('Failed to fetch organizations');
+        
+        const data = await response.json();
+        setOrganizations(data.organizations);
         
         // Set current organization
         if (currentOrgId) {
-          const org = mockOrgs.find(o => o.id === currentOrgId);
-          setCurrentOrg(org || mockOrgs[0]);
+          const org = data.organizations.find((o: Organization) => o.id === currentOrgId);
+          setCurrentOrg(org || data.organizations[0]);
         } else {
-          setCurrentOrg(mockOrgs[0]);
+          setCurrentOrg(data.organizations[0]);
         }
       } catch (error) {
         console.error('Failed to fetch organizations:', error);
+        // Fallback to empty state
+        setOrganizations([]);
+        setCurrentOrg(null);
       } finally {
         setIsLoading(false);
       }

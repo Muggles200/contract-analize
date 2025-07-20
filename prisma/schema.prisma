@@ -40,6 +40,8 @@ model User {
   usageLogs               UsageLog[]
   analyticsEvents         AnalyticsEvent[]
   userActivities          UserActivity[]
+  scheduledReports        ScheduledReport[]
+  reportHistory           ReportHistory[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -137,6 +139,8 @@ model Organization {
   subscriptions   Subscription[]
   analyticsEvents AnalyticsEvent[]
   userActivities  UserActivity[]
+  scheduledReports ScheduledReport[]
+  reportHistory    ReportHistory[]
 
   @@index([slug])
   @@index([createdAt])
@@ -444,4 +448,70 @@ model PerformanceMetric {
   @@index([timestamp])
   @@index([metricName, timestamp])
   @@map("performance_metrics")
+}
+
+// Report models
+model ScheduledReport {
+  id             String    @id @default(cuid())
+  userId         String
+  organizationId String?
+  name           String
+  description    String?
+  template       String
+  reportType     String
+  frequency      String    // daily, weekly, monthly, quarterly
+  dayOfWeek      Int?      // 0-6 for weekly reports
+  dayOfMonth     Int?      // 1-31 for monthly reports
+  timeOfDay      String?   // HH:MM format
+  recipients     Json?     // Array of email addresses
+  isActive       Boolean   @default(true)
+  lastRunAt      DateTime?
+  nextRunAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([frequency])
+  @@index([isActive])
+  @@index([nextRunAt])
+  @@index([userId, isActive])
+  @@index([organizationId, isActive])
+  @@map("scheduled_reports")
+}
+
+model ReportHistory {
+  id             String    @id @default(cuid())
+  userId         String
+  organizationId String?
+  reportName     String
+  template       String
+  reportType     String
+  dateRange      Json?     // { start: Date, end: Date }
+  filePath       String?
+  fileSize       BigInt?
+  downloadCount  Int       @default(0)
+  status         String    @default("completed") // completed, failed, processing
+  errorMessage   String?
+  metadata       Json?
+  createdAt      DateTime  @default(now())
+
+  // Relations
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([template])
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId, status])
+  @@index([organizationId, status])
+  @@index([userId, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("report_history")
 } 

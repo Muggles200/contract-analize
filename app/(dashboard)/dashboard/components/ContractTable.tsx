@@ -15,7 +15,8 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
-  Tag
+  Tag,
+  Brain
 } from 'lucide-react';
 
 interface Contract {
@@ -44,6 +45,7 @@ interface ContractTableProps {
   sortBy: string;
   sortOrder: 'asc' | 'desc';
   onAction: (contractId: string, action: string) => void;
+  selectedAnalysisType?: string;
 }
 
 const getStatusIcon = (status: string) => {
@@ -100,7 +102,8 @@ export default function ContractTable({
   onSort,
   sortBy,
   sortOrder,
-  onAction
+  onAction,
+  selectedAnalysisType
 }: ContractTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
@@ -279,6 +282,15 @@ export default function ContractTable({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center space-x-2">
+                    {selectedAnalysisType && (
+                      <button
+                        onClick={() => onAction(contract.id, 'analyze')}
+                        className="text-green-600 hover:text-green-900 p-1"
+                        title={`Start ${selectedAnalysisType.replace('-', ' ')} Analysis`}
+                      >
+                        <Brain className="w-4 h-4" />
+                      </button>
+                    )}
                     <Link
                       href={`/dashboard/contracts/${contract.id}`}
                       className="text-blue-600 hover:text-blue-900 p-1"

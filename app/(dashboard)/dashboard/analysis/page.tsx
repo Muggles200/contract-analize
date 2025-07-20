@@ -24,6 +24,7 @@ import ProcessingProgress from "./components/ProcessingProgress";
 import RecentAnalyses from "./components/RecentAnalyses";
 import AnalysisStatistics from "./components/AnalysisStatistics";
 import QuickAnalysisActions from "./components/QuickAnalysisActions";
+import RealTimeUpdates from "./components/RealTimeUpdates";
 
 export default async function AnalysisDashboardPage() {
   const session = await auth();
@@ -116,9 +117,10 @@ export default async function AnalysisDashboardPage() {
     })
   ]);
 
-  // Convert dates to strings for component compatibility
+  // Convert dates to strings for component compatibility and normalize status
   const convertDatesToStrings = (analysis: any) => ({
     ...analysis,
+    status: analysis.status.toLowerCase(),
     createdAt: analysis.createdAt.toISOString(),
     updatedAt: analysis.updatedAt.toISOString(),
     startedAt: analysis.startedAt?.toISOString(),
@@ -186,8 +188,13 @@ export default async function AnalysisDashboardPage() {
               Monitor your contract analyses and AI processing queue
             </p>
           </div>
-          <div className="p-3 bg-white/10 rounded-lg">
-            <Brain className="w-8 h-8" />
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-white/10 rounded-lg">
+              <Brain className="w-8 h-8" />
+            </div>
+            <div className="bg-white/10 rounded-lg p-2">
+              <RealTimeUpdates enabled={true} refreshInterval={15000} />
+            </div>
           </div>
         </div>
       </div>

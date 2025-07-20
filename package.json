@@ -6,13 +6,23 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "npm run test:ai && npm run test:long-contracts",
+    "test:ai": "tsx scripts/test-ai.ts",
+    "test:ai:simple": "tsx scripts/test-ai-simple.ts",
+    "test:ai:env": "tsx scripts/test-ai-env.ts",
+    "test:ai:setup": "tsx scripts/test-ai-setup.ts",
+    "test:ai:check": "tsx scripts/test-ai-check.ts",
+    "test:ai:quick": "tsx -e \"import('./lib/test-ai-improvements').then(m => m.runAIAnalysisTests())\"",
+    "test:long-contracts": "tsx scripts/test-long-contracts.ts",
+    "test:json-recovery": "tsx scripts/test-json-recovery.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
     "@hookform/resolvers": "^5.1.1",
     "@prisma/client": "^6.12.0",
     "@prisma/extension-accelerate": "^2.0.2",
+    "@stripe/stripe-js": "^7.5.0",
     "@vercel/blob": "^1.1.1",
     "bcryptjs": "^3.0.2",
     "dotenv": "^16.6.1",
@@ -24,9 +34,11 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.60.0",
+    "react-image-crop": "^11.0.10",
     "recharts": "^3.1.0",
     "resend": "^4.7.0",
     "sonner": "^2.0.6",
+    "stripe": "^18.3.0",
     "zod": "^4.0.5"
   },
   "devDependencies": {

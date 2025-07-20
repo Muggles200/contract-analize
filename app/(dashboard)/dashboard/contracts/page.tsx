@@ -8,7 +8,12 @@ import {
   FileText,
   Upload,
   Check,
-  X
+  X,
+  Brain,
+  BarChart3,
+  AlertTriangle,
+  Eye,
+  Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ContractTable from '../components/ContractTable';
@@ -43,6 +48,37 @@ interface ContractsResponse {
   };
 }
 
+const ANALYSIS_TYPES = {
+  'comprehensive': {
+    label: 'Comprehensive Analysis',
+    icon: BarChart3,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-200'
+  },
+  'risk-assessment': {
+    label: 'Risk Assessment',
+    icon: AlertTriangle,
+    color: 'text-red-600',
+    bgColor: 'bg-red-50',
+    borderColor: 'border-red-200'
+  },
+  'clause-extraction': {
+    label: 'Clause Extraction',
+    icon: Eye,
+    color: 'text-green-600',
+    bgColor: 'bg-green-50',
+    borderColor: 'border-green-200'
+  },
+  'basic': {
+    label: 'Basic Analysis',
+    icon: Zap,
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-200'
+  }
+};
+
 export default function ContractsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -63,6 +99,9 @@ export default function ContractsPage() {
   const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc');
+  
+  // Analysis type from URL
+  const [selectedAnalysisType, setSelectedAnalysisType] = useState(searchParams.get('analysisType') || '');
   
   // View and selection
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
@@ -112,15 +151,21 @@ export default function ContractsPage() {
     if (sortBy) params.set('sortBy', sortBy);
     if (sortOrder) params.set('sortOrder', sortOrder);
     if (pagination.page > 1) params.set('page', pagination.page.toString());
+    if (selectedAnalysisType) params.set('analysisType', selectedAnalysisType);
 
     const newUrl = `/dashboard/contracts${params.toString() ? `?${params.toString()}` : ''}`;
     router.replace(newUrl, { scroll: false });
-  }, [search, statusFilter, typeFilter, sortBy, sortOrder, pagination.page, router]);
+  }, [search, statusFilter, typeFilter, sortBy, sortOrder, pagination.page, selectedAnalysisType, router]);
 
   // Fetch contracts when dependencies change
   useEffect(() => {
     fetchContracts();
   }, [fetchContracts]);
+
+  // Clear analysis type selection
+  const clearAnalysisType = () => {
+    setSelectedAnalysisType('');
+  };
 
   // Handle bulk actions
   const handleBulkAction = async (action: string) => {
@@ -180,11 +225,34 @@ export default function ContractsPage() {
             toast.success('Download started');
           }
           break;
+        case 'analyze':
+          // Start analysis with selected type
+          const analysisType = selectedAnalysisType || 'comprehensive';
+          const analysisResponse = await fetch('/api/analysis/start', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contractId,
+              analysisType,
+            }),
+          });
+
+          if (analysisResponse.ok) {
+            toast.success(`${ANALYSIS_TYPES[analysisType as keyof typeof ANALYSIS_TYPES]?.label || 'Analysis'} started successfully`);
+            // Navigate to analysis page or refresh
+            router.push(`/dashboard/analysis`);
+          } else {
+            const errorData = await analysisResponse.json();
+            throw new Error(errorData.error || 'Failed to start analysis');
+          }
+          break;
         default:
           break;
       }
     } catch (error) {
-      toast.error('Failed to perform action');
+      toast.error(error instanceof Error ? error.message : 'Failed to perform action');
     }
   };
 
@@ -258,6 +326,34 @@ export default function ContractsPage() {
           </button>
         </div>
       </div>
+
+      {/* Analysis Type Selection Banner */}
+      {selectedAnalysisType && (
+        <div className={`${ANALYSIS_TYPES[selectedAnalysisType as keyof typeof ANALYSIS_TYPES]?.bgColor} border ${ANALYSIS_TYPES[selectedAnalysisType as keyof typeof ANALYSIS_TYPES]?.borderColor} rounded-lg p-4`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              {(() => {
+                const Icon = ANALYSIS_TYPES[selectedAnalysisType as keyof typeof ANALYSIS_TYPES]?.icon || Brain;
+                return <Icon className={`w-5 h-5 ${ANALYSIS_TYPES[selectedAnalysisType as keyof typeof ANALYSIS_TYPES]?.color}`} />;
+              })()}
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  Analysis Type Selected: {ANALYSIS_TYPES[selectedAnalysisType as keyof typeof ANALYSIS_TYPES]?.label}
+                </p>
+                <p className="text-xs text-gray-600">
+                  Click "Analyze" on any contract to start {ANALYSIS_TYPES[selectedAnalysisType as keyof typeof ANALYSIS_TYPES]?.label.toLowerCase()}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={clearAnalysisType}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -405,6 +501,7 @@ export default function ContractsPage() {
                 sortBy={sortBy}
                 sortOrder={sortOrder}
                 onAction={handleContractAction}
+                selectedAnalysisType={selectedAnalysisType}
               />
             ) : (
               <ContractGrid
@@ -412,6 +509,7 @@ export default function ContractsPage() {
                 selectedContracts={selectedContracts}
                 onSelectContract={handleSelectContract}
                 onAction={handleContractAction}
+                selectedAnalysisType={selectedAnalysisType}
               />
             )}
           </>

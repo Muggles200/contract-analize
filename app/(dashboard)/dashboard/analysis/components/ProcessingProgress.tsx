@@ -13,6 +13,8 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
+import AnalysisProgressBar from './AnalysisProgressBar';
+import AnalysisStatusBadge from './AnalysisStatusBadge';
 
 interface Analysis {
   id: string;
@@ -59,13 +61,18 @@ export default function ProcessingProgress({ processingAnalyses }: ProcessingPro
   }, [processingAnalyses]);
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    const normalizedStatus = status.toLowerCase();
+    switch (normalizedStatus) {
       case 'processing':
         return <Play className="w-4 h-4 text-blue-500" />;
-      case 'complete':
+      case 'completed':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'error':
+      case 'failed':
         return <XCircle className="w-4 h-4 text-red-500" />;
+      case 'pending':
+        return <Clock className="w-4 h-4 text-yellow-500" />;
+      case 'cancelled':
+        return <XCircle className="w-4 h-4 text-gray-500" />;
       default:
         return <Clock className="w-4 h-4 text-gray-500" />;
     }

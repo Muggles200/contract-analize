@@ -10,8 +10,17 @@ export default function AnalysisDashboardLoading() {
             <div className="h-8 bg-white/20 rounded w-64 mb-2 animate-pulse"></div>
             <div className="h-4 bg-white/20 rounded w-96 animate-pulse"></div>
           </div>
-          <div className="p-3 bg-white/10 rounded-lg">
-            <Brain className="w-8 h-8" />
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-white/10 rounded-lg">
+              <Brain className="w-8 h-8" />
+            </div>
+            <div className="bg-white/10 rounded-lg p-2">
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-white/20 rounded animate-pulse"></div>
+                <div className="w-4 h-4 bg-white/20 rounded animate-pulse"></div>
+                <div className="w-16 h-3 bg-white/20 rounded animate-pulse"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

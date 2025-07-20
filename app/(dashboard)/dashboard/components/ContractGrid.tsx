@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   Tag,
   Calendar,
-  HardDrive
+  HardDrive,
+  Brain
 } from 'lucide-react';
 
 interface Contract {
@@ -40,6 +41,7 @@ interface ContractGridProps {
   selectedContracts: string[];
   onSelectContract: (contractId: string) => void;
   onAction: (contractId: string, action: string) => void;
+  selectedAnalysisType?: string;
 }
 
 const getStatusIcon = (status: string) => {
@@ -92,7 +94,8 @@ export default function ContractGrid({
   contracts,
   selectedContracts,
   onSelectContract,
-  onAction
+  onAction,
+  selectedAnalysisType
 }: ContractGridProps) {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
@@ -131,6 +134,15 @@ export default function ContractGrid({
               </div>
               
               <div className="flex items-center space-x-1">
+                {selectedAnalysisType && (
+                  <button
+                    onClick={() => onAction(contract.id, 'analyze')}
+                    className="p-1 text-green-400 hover:text-green-600"
+                    title={`Start ${selectedAnalysisType.replace('-', ' ')} Analysis`}
+                  >
+                    <Brain className="w-4 h-4" />
+                  </button>
+                )}
                 <Link
                   href={`/dashboard/contracts/${contract.id}`}
                   className="p-1 text-gray-400 hover:text-gray-600"

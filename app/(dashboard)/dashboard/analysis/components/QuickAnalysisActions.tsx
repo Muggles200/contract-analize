@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Brain, 
   Upload, 
@@ -17,11 +18,55 @@ import {
   XCircle,
   RefreshCw,
   Download,
-  Share2
+  Share2,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const quickActions = [
+const ANALYSIS_TYPES = [
+  {
+    name: 'Comprehensive Analysis',
+    description: 'Full contract analysis with risks, clauses, and recommendations',
+    icon: BarChart3,
+    color: 'bg-purple-50 text-purple-600',
+    bgColor: 'hover:bg-purple-50',
+    action: 'comprehensive',
+    estimatedTime: '5-10 minutes',
+    features: ['Risk Assessment', 'Clause Extraction', 'Recommendations', 'Metadata Analysis']
+  },
+  {
+    name: 'Risk Assessment',
+    description: 'Quick risk identification and severity analysis',
+    icon: AlertTriangle,
+    color: 'bg-red-50 text-red-600',
+    bgColor: 'hover:bg-red-50',
+    action: 'risk-assessment',
+    estimatedTime: '3-5 minutes',
+    features: ['Risk Identification', 'Severity Analysis', 'Risk Categories', 'Mitigation Suggestions']
+  },
+  {
+    name: 'Clause Extraction',
+    description: 'Extract and categorize important contract clauses',
+    icon: Eye,
+    color: 'bg-green-50 text-green-600',
+    bgColor: 'hover:bg-green-50',
+    action: 'clause-extraction',
+    estimatedTime: '2-4 minutes',
+    features: ['Clause Identification', 'Category Classification', 'Importance Scoring', 'Text Extraction']
+  },
+  {
+    name: 'Basic Analysis',
+    description: 'Quick overview and summary of contract content',
+    icon: Zap,
+    color: 'bg-orange-50 text-orange-600',
+    bgColor: 'hover:bg-orange-50',
+    action: 'basic',
+    estimatedTime: '1-2 minutes',
+    features: ['Contract Summary', 'Key Terms', 'Basic Overview', 'Quick Insights']
+  }
+];
+
+const OTHER_ACTIONS = [
   {
     name: 'Upload & Analyze',
     description: 'Upload a new contract and start analysis immediately',
@@ -32,45 +77,9 @@ const quickActions = [
     action: 'upload'
   },
   {
-    name: 'Comprehensive Analysis',
-    description: 'Full contract analysis with risks, clauses, and recommendations',
-    href: '#',
-    icon: BarChart3,
-    color: 'bg-purple-50 text-purple-600',
-    bgColor: 'hover:bg-purple-50',
-    action: 'comprehensive'
-  },
-  {
-    name: 'Risk Assessment',
-    description: 'Quick risk identification and severity analysis',
-    href: '#',
-    icon: AlertTriangle,
-    color: 'bg-red-50 text-red-600',
-    bgColor: 'hover:bg-red-50',
-    action: 'risk-assessment'
-  },
-  {
-    name: 'Clause Extraction',
-    description: 'Extract and categorize important contract clauses',
-    href: '#',
-    icon: Eye,
-    color: 'bg-green-50 text-green-600',
-    bgColor: 'hover:bg-green-50',
-    action: 'clause-extraction'
-  },
-  {
-    name: 'Basic Analysis',
-    description: 'Quick overview and summary of contract content',
-    href: '#',
-    icon: Zap,
-    color: 'bg-orange-50 text-orange-600',
-    bgColor: 'hover:bg-orange-50',
-    action: 'basic'
-  },
-  {
     name: 'Batch Analysis',
     description: 'Analyze multiple contracts at once',
-    href: '#',
+    href: '/dashboard/analysis/batch',
     icon: FileText,
     color: 'bg-indigo-50 text-indigo-600',
     bgColor: 'hover:bg-indigo-50',
@@ -79,7 +88,7 @@ const quickActions = [
   {
     name: 'Analysis Settings',
     description: 'Configure analysis parameters and preferences',
-    href: '#',
+    href: '/dashboard/settings/analysis',
     icon: Settings,
     color: 'bg-gray-50 text-gray-600',
     bgColor: 'hover:bg-gray-50',
@@ -88,7 +97,7 @@ const quickActions = [
   {
     name: 'Export Results',
     description: 'Export analysis results in various formats',
-    href: '#',
+    href: '/dashboard/analysis/export',
     icon: Download,
     color: 'bg-teal-50 text-teal-600',
     bgColor: 'hover:bg-teal-50',
@@ -96,14 +105,51 @@ const quickActions = [
   }
 ];
 
-export default function QuickAnalysisActions() {
+interface QuickAnalysisActionsProps {
+  onAnalysisTypeSelect?: (analysisType: string) => void;
+  showContractSelection?: boolean;
+}
+
+export default function QuickAnalysisActions({ 
+  onAnalysisTypeSelect,
+  showContractSelection = false 
+}: QuickAnalysisActionsProps) {
+  const router = useRouter();
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showAnalysisDetails, setShowAnalysisDetails] = useState<string | null>(null);
 
-  const handleActionClick = async (action: string) => {
+  const handleAnalysisTypeClick = async (action: string) => {
+    if (onAnalysisTypeSelect) {
+      onAnalysisTypeSelect(action);
+      return;
+    }
+
+    if (showContractSelection) {
+      // Navigate to contracts page with analysis type pre-selected
+      router.push(`/dashboard/contracts?analysisType=${action}`);
+      return;
+    }
+
+    // Default behavior - show toast and navigate to contracts
+    setSelectedAction(action);
+    setIsProcessing(true);
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      toast.success(`${action.replace('-', ' ')} analysis selected`);
+      router.push(`/dashboard/contracts?analysisType=${action}`);
+    } catch (error) {
+      toast.error('Failed to select analysis type');
+    } finally {
+      setIsProcessing(false);
+      setSelectedAction(null);
+    }
+  };
+
+  const handleOtherActionClick = async (action: string, href?: string) => {
     if (action === 'upload') {
-      // Navigate to upload page
-      window.location.href = '/dashboard/upload';
+      router.push('/dashboard/upload');
       return;
     }
 
@@ -122,26 +168,8 @@ export default function QuickAnalysisActions() {
       return;
     }
 
-    // For analysis types, show a modal or redirect to contract selection
-    setSelectedAction(action);
-    setIsProcessing(true);
-
-    try {
-      // Simulate processing
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success(`${action.replace('-', ' ')} analysis started`);
-      
-      // In a real implementation, this would redirect to contract selection
-      // or show a modal to select contracts
-      if (action === 'comprehensive') {
-        toast.info('Please select a contract to analyze');
-      }
-    } catch (error) {
-      toast.error('Failed to start analysis');
-    } finally {
-      setIsProcessing(false);
-      setSelectedAction(null);
+    if (href) {
+      router.push(href);
     }
   };
 
@@ -154,37 +182,103 @@ export default function QuickAnalysisActions() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {quickActions.map((action) => (
-          <button
-            key={action.name}
-            onClick={() => handleActionClick(action.action)}
-            disabled={isProcessing && selectedAction === action.action}
-            className={`p-4 border border-gray-200 rounded-lg text-left transition-all duration-200 ${
-              isProcessing && selectedAction === action.action
-                ? 'opacity-50 cursor-not-allowed'
-                : 'hover:border-gray-300 hover:shadow-sm'
-            } ${action.bgColor}`}
-          >
-            <div className="flex items-start space-x-3">
-              <div className={`p-2 rounded-lg ${action.color}`}>
-                {isProcessing && selectedAction === action.action ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <action.icon className="w-4 h-4" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-medium text-gray-900 mb-1">
-                  {action.name}
-                </h4>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  {action.description}
-                </p>
-              </div>
+      {/* Analysis Types Section */}
+      <div className="mb-8">
+        <h4 className="text-sm font-medium text-gray-900 mb-4">Analysis Types</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {ANALYSIS_TYPES.map((action) => (
+            <div key={action.name} className="relative">
+              <button
+                onClick={() => handleAnalysisTypeClick(action.action)}
+                disabled={isProcessing && selectedAction === action.action}
+                className={`w-full p-4 border border-gray-200 rounded-lg text-left transition-all duration-200 ${
+                  isProcessing && selectedAction === action.action
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:border-gray-300 hover:shadow-sm'
+                } ${action.bgColor}`}
+                onMouseEnter={() => setShowAnalysisDetails(action.action)}
+                onMouseLeave={() => setShowAnalysisDetails(null)}
+              >
+                <div className="flex items-start space-x-3">
+                  <div className={`p-2 rounded-lg ${action.color}`}>
+                    {isProcessing && selectedAction === action.action ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <action.icon className="w-4 h-4" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="text-sm font-medium text-gray-900">
+                        {action.name}
+                      </h4>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed mb-2">
+                      {action.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400">
+                        ⏱ {action.estimatedTime}
+                      </span>
+                      <span className="text-xs text-blue-600 font-medium">
+                        Select
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </button>
+
+              {/* Hover Details */}
+              {showAnalysisDetails === action.action && (
+                <div className="absolute z-10 left-full ml-2 top-0 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
+                  <h5 className="text-sm font-medium text-gray-900 mb-2">Features:</h5>
+                  <ul className="text-xs text-gray-600 space-y-1">
+                    {action.features.map((feature, index) => (
+                      <li key={index} className="flex items-center">
+                        <CheckCircle className="w-3 h-3 text-green-500 mr-2 flex-shrink-0" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-3 pt-2 border-t border-gray-100">
+                    <p className="text-xs text-gray-500">
+                      Estimated time: <span className="font-medium">{action.estimatedTime}</span>
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-          </button>
-        ))}
+          ))}
+        </div>
+      </div>
+
+      {/* Other Actions Section */}
+      <div className="mb-8">
+        <h4 className="text-sm font-medium text-gray-900 mb-4">Other Actions</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {OTHER_ACTIONS.map((action) => (
+            <button
+              key={action.name}
+              onClick={() => handleOtherActionClick(action.action, action.href)}
+              className={`p-4 border border-gray-200 rounded-lg text-left transition-all duration-200 hover:border-gray-300 hover:shadow-sm ${action.bgColor}`}
+            >
+              <div className="flex items-start space-x-3">
+                <div className={`p-2 rounded-lg ${action.color}`}>
+                  <action.icon className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-medium text-gray-900 mb-1">
+                    {action.name}
+                  </h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    {action.description}
+                  </p>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Recent Activity Summary */}
