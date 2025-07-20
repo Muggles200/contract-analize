@@ -1,10 +1,5 @@
 #!/usr/bin/env tsx
 
-import * as dotenv from 'dotenv';
-
-// Load environment variables first
-dotenv.config({ path: '.env.local' });
-dotenv.config({ path: '.env' });
 
 import { aiAnalysisService, AnalysisRequest } from '../lib/ai-analysis';
 

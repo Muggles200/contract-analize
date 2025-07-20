@@ -1,11 +1,5 @@
 #!/usr/bin/env tsx
 
-import * as dotenv from 'dotenv';
-
-// Load environment variables first
-dotenv.config({ path: '.env.local' });
-dotenv.config({ path: '.env' });
-
 import { runAIAnalysisTests } from '../lib/test-ai-improvements';
 
 async function main() {
