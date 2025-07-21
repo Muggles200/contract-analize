@@ -1,3 +1,2 @@
-import { handlers } from "@/lib/auth"
-
-export const { GET, POST } = handlers 
+// This route is no longer used. Clerk handles authentication endpoints.
+export {}; 

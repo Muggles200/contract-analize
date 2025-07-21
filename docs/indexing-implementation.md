@@ -158,7 +158,7 @@ DROP INDEX IF EXISTS unused_index_name;
 // Uses composite index [userId, status, deletedAt]
 const contracts = await prisma.contract.findMany({
   where: {
-    userId: session.user.id,
+    userId: userId,
     status: 'completed',
     deletedAt: null
   }
@@ -184,7 +184,7 @@ const contracts = await prisma.contract.findMany({
 ```typescript
 // Uses [userId, createdAt] index
 const recentContracts = await prisma.contract.findMany({
-  where: { userId: session.user.id },
+  where: { userId: userId },
   orderBy: { createdAt: 'desc' },
   take: 10
 })
@@ -196,7 +196,7 @@ const recentContracts = await prisma.contract.findMany({
 ```typescript
 // Uses indexed cursor for efficient pagination
 const contracts = await prisma.contract.findMany({
-  where: { userId: session.user.id },
+  where: { userId: userId },
   cursor: { id: lastId },
   take: 20,
   orderBy: { createdAt: 'desc' }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { analysisQueue } from '@/lib/analysis-queue';
 import { prisma } from '@/lib/db';
 
@@ -9,20 +9,24 @@ export async function GET(
 ) {
   try {
     // Get user session
-    const session = await auth();
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id: analysisId } = await params;
+
+    // Fetch user's organization membership
+    const membership = await prisma.organizationMember.findFirst({ where: { userId } });
+    const organizationId = membership?.organizationId;
 
     // Get analysis result
     const analysis = await prisma.analysisResult.findFirst({
       where: {
         id: analysisId,
         OR: [
-          { userId: session.user.id },
-          { organizationId: session.user.organizationId }
+          { userId: userId },
+          { organizationId: organizationId }
         ]
       },
       include: {

@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import { 
@@ -36,17 +36,16 @@ interface PageProps {
 
 export default async function AnalysisResultsPage({ params }: PageProps) {
   const { id } = await params;
-  const session = await auth();
-  
-  if (!session?.user) {
-    redirect("/auth/login");
+  const { userId } = await auth();
+  if (!userId) {
+    redirect("/sign-in");
   }
 
   // Fetch analysis result with contract details
   const analysis = await prisma.analysisResult.findFirst({
     where: {
       id: id,
-      userId: session.user.id
+      userId: userId
     },
     include: {
       contract: {

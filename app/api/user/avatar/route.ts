@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { put } from '@vercel/blob';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -35,14 +35,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload to Vercel Blob
-    const blob = await put(`avatars/${session.user.id}/${file.name}`, file, {
+    const blob = await put(`avatars/${userId}/${file.name}`, file, {
       access: 'public',
       addRandomSuffix: true
     });
 
     // Update user profile with new avatar URL
     const user = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data: { image: blob.url },
       select: {
         id: true,
@@ -71,15 +71,15 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Update user profile to remove avatar
     const user = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data: { image: null },
       select: {
         id: true,

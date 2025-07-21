@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
 
@@ -11,9 +11,9 @@ const createOrganizationSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         where: {
           members: {
             some: {
-              userId: session.user.id,
+              userId: userId,
             },
           },
           deletedAt: null,
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         where: {
           members: {
             some: {
-              userId: session.user.id,
+              userId: userId,
             },
           },
           deletedAt: null,
@@ -90,9 +90,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
         slug,
         members: {
           create: {
-            userId: session.user.id!,
+            userId: userId!,
             role: 'owner',
             permissions: ['*'], // All permissions for owner
           },

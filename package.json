@@ -19,7 +19,7 @@
     "test:json-recovery": "tsx scripts/test-json-recovery.ts"
   },
   "dependencies": {
-    "@auth/prisma-adapter": "^2.10.0",
+    "@clerk/nextjs": "^4.0.0",
     "@hookform/resolvers": "^5.1.1",
     "@prisma/client": "^6.12.0",
     "@prisma/extension-accelerate": "^2.0.2",
@@ -27,10 +27,8 @@
     "@vercel/analytics": "^1.5.0",
     "@vercel/blob": "^1.1.1",
     "@vercel/speed-insights": "^1.2.0",
-    "bcryptjs": "^3.0.2",
     "lucide-react": "^0.525.0",
     "next": "15.4.1",
-    "next-auth": "5.0.0-beta.29",
     "openai": "^5.10.1",
     "prettier": "^3.6.2",
     "react": "19.1.0",

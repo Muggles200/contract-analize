@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 
@@ -52,9 +52,9 @@ async function validateFile(file: File): Promise<{ valid: boolean; error?: strin
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -90,14 +90,14 @@ export async function POST(request: NextRequest) {
       addRandomSuffix: true
     });
 
-    if (!session.user.id) {
+    if (!userId) {
       return NextResponse.json({ error: 'User ID not found' }, { status: 400 });
     }
 
     // Save to database
     const contract = await prisma.contract.create({
       data: {
-        userId: session.user.id,
+        userId: userId,
         fileName: file.name,
         fileSize: BigInt(file.size),
         fileType: file.type,
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     // Log the upload
     await prisma.usageLog.create({
       data: {
-        userId: session.user.id,
+        userId: userId,
         action: 'contract_upload',
         resourceType: 'contract',
         resourceId: contract.id,

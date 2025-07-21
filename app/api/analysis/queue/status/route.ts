@@ -1,33 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { analysisQueue } from '@/lib/analysis-queue';
 import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
     // Get user session
-    const session = await auth();
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Fetch user's organization membership
+    const membership = await prisma.organizationMember.findFirst({ where: { userId } });
+    const organizationId = membership?.organizationId;
 
     // Get queue status
     const queueStatus = await analysisQueue.getQueueStatus();
 
     // Get user's recent jobs
     const userJobs = await analysisQueue.getUserJobs(
-      session.user.id,
-      session.user.organizationId,
+      userId,
+      organizationId,
       10, // Limit to 10 recent jobs
       0
     );
 
     // Get organization jobs if user is in an organization
     let organizationJobs: any[] = [];
-    if (session.user.organizationId) {
+    if (organizationId) {
       organizationJobs = await prisma.analysisResult.findMany({
         where: {
-          organizationId: session.user.organizationId,
+          organizationId: organizationId,
           status: {
             in: ['PENDING', 'PROCESSING']
           }
@@ -91,8 +95,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Get user session
-    const session = await auth();
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

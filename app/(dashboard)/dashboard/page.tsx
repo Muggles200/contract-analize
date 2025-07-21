@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { 
@@ -21,11 +21,11 @@ import QuickActions from "./components/QuickActions";
 import NotificationsPanel from "./components/NotificationsPanel";
 
 export default async function DashboardPage() {
-  const session = await auth();
-  
-  if (!session?.user) {
-    redirect("/auth/login");
+  const { userId } = await auth();
+  if (!userId) {
+    redirect("/sign-in");
   }
+  const user = await currentUser();
 
   // Fetch dashboard data
   const [
@@ -37,17 +37,17 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     // Total contracts count
     prisma.contract.count({
-      where: { userId: session.user.id, deletedAt: null }
+      where: { userId, deletedAt: null }
     }),
     
     // Total analyses count
     prisma.analysisResult.count({
-      where: { userId: session.user.id }
+      where: { userId }
     }),
     
     // Recent contracts
     prisma.contract.findMany({
-      where: { userId: session.user.id, deletedAt: null },
+      where: { userId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
       take: 5,
       include: {
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
     
     // Recent analyses
     prisma.analysisResult.findMany({
-      where: { userId: session.user.id },
+      where: { userId },
       orderBy: { createdAt: 'desc' },
       take: 5,
       include: {
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
     prisma.usageLog.groupBy({
       by: ['action'],
       where: {
-        userId: session.user.id,
+        userId,
         createdAt: {
           gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
         }
@@ -81,7 +81,9 @@ export default async function DashboardPage() {
         action: true
       },
       orderBy: {
-        action: 'asc'
+        _count: {
+          action: 'desc'
+        }
       }
     })
   ]);
@@ -130,7 +132,7 @@ export default async function DashboardPage() {
       {/* Welcome Message */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 text-white">
         <h1 className="text-2xl font-bold mb-2">
-          Welcome back, {session.user.name || 'User'}! 👋
+          Welcome back, {user?.firstName || user?.username || 'User'}! 👋
         </h1>
         <p className="text-blue-100">
           Here's what's happening with your contracts and analyses today.

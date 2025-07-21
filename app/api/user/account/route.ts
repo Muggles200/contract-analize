@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
@@ -13,9 +13,9 @@ const deleteAccountSchema = z.object({
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth()
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -24,7 +24,7 @@ export async function DELETE(request: NextRequest) {
 
     // Get user with password
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: {
         id: true,
         password: true,
@@ -51,7 +51,7 @@ export async function DELETE(request: NextRequest) {
     // Delete user and all associated data
     // Note: This will cascade delete all related records due to foreign key constraints
     await prisma.user.delete({
-      where: { id: session.user.id },
+      where: { id: userId },
     })
 
     return NextResponse.json({ message: 'Account deleted successfully' })

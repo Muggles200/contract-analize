@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
     // Get user session
-    const session = await auth();
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const whereClause: any = {
-      userId: session.user.id
+      userId: userId
     };
 
     if (status) {
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     // Get aggregated statistics
     const stats = await prisma.analysisResult.groupBy({
       by: ['status'],
-      where: { userId: session.user.id },
+      where: { userId: userId },
       _count: {
         id: true
       }
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     // Calculate processing statistics
     const recentAnalyses = await prisma.analysisResult.findMany({
       where: {
-        userId: session.user.id,
+        userId: userId,
         status: 'COMPLETED',
         completedAt: {
           gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours

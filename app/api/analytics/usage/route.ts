@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: any = {
-      userId: session.user.id,
+      userId: userId,
       createdAt: {
         gte: startDate,
       },
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     const contractTypes = await prisma.contract.groupBy({
       by: ['contractType'],
       where: {
-        userId: session.user.id,
+        userId: userId,
         deletedAt: null,
         createdAt: {
           gte: startDate,
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     const analysisTypes = await prisma.analysisResult.groupBy({
       by: ['analysisType'],
       where: {
-        userId: session.user.id,
+        userId: userId,
         createdAt: {
           gte: startDate,
         },
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     // Get performance metrics
     const performanceMetrics = await prisma.analysisResult.aggregate({
       where: {
-        userId: session.user.id,
+        userId: userId,
         createdAt: {
           gte: startDate,
         },

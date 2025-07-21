@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: any = {
-      userId: session.user.id,
+      userId: userId,
       createdAt: {
         gte: startDate,
       },
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       // Total contracts (all time)
       prisma.contract.count({
         where: {
-          userId: session.user.id,
+          userId: userId,
           deletedAt: null,
           ...(organizationId && { organizationId }),
         },
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
       // Total analyses (all time)
       prisma.analysisResult.count({
         where: {
-          userId: session.user.id,
+          userId: userId,
           ...(organizationId && { organizationId }),
         },
       }),
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       prisma.usageLog.groupBy({
         by: ['action'],
         where: {
-          userId: session.user.id,
+          userId: userId,
           createdAt: {
             gte: startDate,
           },
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
       // Recent activity
       prisma.userActivity.findMany({
         where: {
-          userId: session.user.id,
+          userId: userId,
           ...(organizationId && { organizationId }),
         },
         orderBy: { createdAt: 'desc' },

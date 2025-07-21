@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       prisma.analysisResult.groupBy({
         by: ['status'],
         where: {
-          userId: session.user.id,
+          userId: userId,
           createdAt: { gte: startDate }
         },
         _count: { id: true },
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       prisma.analysisResult.groupBy({
         by: ['createdAt'],
         where: {
-          userId: session.user.id,
+          userId: userId,
           createdAt: { gte: new Date(now.getFullYear(), now.getMonth() - 6, 1) }
         },
         _count: { id: true },

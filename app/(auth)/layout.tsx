@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from '@clerk/nextjs/server';
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { FileText } from "lucide-react";
@@ -8,9 +8,8 @@ export default async function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-  
-  if (session?.user) {
+  const { userId } = await auth();
+  if (userId) {
     redirect("/dashboard");
   }
 

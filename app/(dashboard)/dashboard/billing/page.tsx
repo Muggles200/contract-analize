@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { 
   CreditCard, 
@@ -21,10 +21,10 @@ import PlanComparison from "./components/PlanComparison";
 import PaymentMethods from "./components/PaymentMethods";
 
 export default async function BillingDashboardPage() {
-  const session = await auth();
+  const { userId } = await auth();
   
-  if (!session?.user) {
-    redirect("/auth/login");
+  if (!userId) {
+    redirect("/sign-in");
   }
 
   return (

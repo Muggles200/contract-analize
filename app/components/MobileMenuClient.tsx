@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
+import { SignInButton, SignUpButton } from '@clerk/nextjs';
 
 export default function MobileMenuClient() {
   const [isOpen, setIsOpen] = useState(false);
@@ -74,20 +75,8 @@ export default function MobileMenuClient() {
               </div>
               
               <div className="mt-8 space-y-4">
-                <Link
-                  href="/auth/login"
-                  onClick={closeMenu}
-                  className="block text-gray-700 hover:text-blue-600 py-2 transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/auth/register"
-                  onClick={closeMenu}
-                  className="block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-center font-medium transition-colors"
-                >
-                  Get Started
-                </Link>
+                <SignInButton><button className="block text-gray-700 hover:text-blue-600 py-2 transition-colors">Sign In</button></SignInButton>
+                <SignUpButton><button className="block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-center font-medium transition-colors">Get Started</button></SignUpButton>
               </div>
             </nav>
           </div>

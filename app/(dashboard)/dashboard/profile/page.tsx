@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from '@clerk/nextjs/server';
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import ProfileForm from "../components/ProfileForm";
@@ -9,15 +9,13 @@ import PasswordChange from "../components/PasswordChange";
 import AccountDeletion from "../components/AccountDeletion";
 
 export default async function ProfilePage() {
-  const session = await auth();
-  
-  if (!session?.user) {
-    redirect("/auth/login");
+  const { userId } = await auth();
+  if (!userId) {
+    redirect("/sign-in");
   }
-
   // Fetch user profile data
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: userId },
     select: {
       id: true,
       name: true,
@@ -28,9 +26,8 @@ export default async function ProfilePage() {
       updatedAt: true,
     },
   });
-
   if (!user) {
-    redirect("/auth/login");
+    redirect("/sign-in");
   }
 
   return (

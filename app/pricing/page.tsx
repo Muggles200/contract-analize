@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { 
   Check, 
@@ -147,7 +147,11 @@ const plans: Plan[] = [
 ];
 
 export default async function PricingPage() {
-  const session = await auth();
+  const { userId } = await auth();
+
+  if (!userId) {
+    redirect('/sign-in');
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -254,7 +258,7 @@ export default async function PricingPage() {
 
               {/* CTA Button */}
               <div className="text-center">
-                {session ? (
+                {userId ? (
                   <Link
                     href={plan.id === 'enterprise' ? '/contact' : `/dashboard/billing?plan=${plan.id}`}
                     className={`w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg transition-colors ${

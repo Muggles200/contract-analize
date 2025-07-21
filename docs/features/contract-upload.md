@@ -252,13 +252,13 @@ const FilePreview: React.FC<FilePreviewProps> = ({
 // app/api/contracts/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -280,7 +280,7 @@ export async function POST(request: NextRequest) {
     // Save to database
     const contract = await db.contract.create({
       data: {
-        userId: session.user.id,
+        userId: userId,
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,

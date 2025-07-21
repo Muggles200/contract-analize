@@ -18,6 +18,7 @@ import {
   Cloud
 } from "lucide-react";
 import MobileMenu from "../components/MobileMenu";
+import { SignInButton, SignUpButton } from '@clerk/nextjs';
 
 export default function AboutPage() {
   return (
@@ -58,12 +59,8 @@ export default function AboutPage() {
 
             {/* Auth Buttons */}
             <div className="hidden md:flex items-center space-x-4">
-              <Link href="/auth/login" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">
-                Sign In
-              </Link>
-              <Link href="/auth/register" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                Get Started
-              </Link>
+              <SignInButton><button className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">Sign In</button></SignInButton>
+              <SignUpButton><button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Get Started</button></SignUpButton>
             </div>
 
             {/* Mobile menu button */}

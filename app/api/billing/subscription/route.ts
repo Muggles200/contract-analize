@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get current subscription
     const subscription = await prisma.subscription.findFirst({
       where: {
-        userId: session.user.id,
+        userId: userId,
         status: { in: ['active', 'trialing', 'past_due'] }
       },
       orderBy: { createdAt: 'desc' }
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const usageStats = await prisma.analysisResult.groupBy({
       by: ['status'],
       where: {
-        userId: session.user.id,
+        userId: userId,
         createdAt: { gte: currentMonth }
       },
       _count: { id: true }

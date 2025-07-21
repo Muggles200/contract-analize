@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { 
@@ -28,10 +28,9 @@ export default async function AnalyticsPage({
 }: {
   searchParams: Promise<{ period?: string; organizationId?: string }>;
 }) {
-  const session = await auth();
-  
-  if (!session?.user) {
-    redirect("/auth/login");
+  const { userId } = await auth();
+  if (!userId) {
+    redirect("/sign-in");
   }
 
   const params = await searchParams;
@@ -56,7 +55,7 @@ export default async function AnalyticsPage({
 
   // Build where clause
   const where: any = {
-    userId: session.user.id,
+    userId: userId,
     createdAt: {
       gte: startDate,
     },
@@ -80,7 +79,7 @@ export default async function AnalyticsPage({
       // Total contracts
       prisma.contract.count({
         where: {
-          userId: session.user.id,
+          userId: userId,
           deletedAt: null,
           ...(organizationId && { organizationId }),
         },
@@ -88,7 +87,7 @@ export default async function AnalyticsPage({
       // Total analyses
       prisma.analysisResult.count({
         where: {
-          userId: session.user.id,
+          userId: userId,
           ...(organizationId && { organizationId }),
         },
       }),
@@ -107,7 +106,7 @@ export default async function AnalyticsPage({
       prisma.usageLog.groupBy({
         by: ['action'],
         where: {
-          userId: session.user.id,
+          userId: userId,
           createdAt: {
             gte: startDate,
           },
@@ -125,7 +124,7 @@ export default async function AnalyticsPage({
     // Performance metrics
     prisma.analysisResult.aggregate({
       where: {
-        userId: session.user.id,
+        userId: userId,
         createdAt: {
           gte: startDate,
         },
@@ -152,7 +151,7 @@ export default async function AnalyticsPage({
     // Cost analysis
     prisma.analysisResult.aggregate({
       where: {
-        userId: session.user.id,
+        userId: userId,
         createdAt: {
           gte: startDate,
         },
@@ -177,7 +176,7 @@ export default async function AnalyticsPage({
     prisma.contract.groupBy({
       by: ['contractType'],
       where: {
-        userId: session.user.id,
+        userId: userId,
         deletedAt: null,
         createdAt: {
           gte: startDate,
@@ -195,7 +194,7 @@ export default async function AnalyticsPage({
     // Common risks
     prisma.analysisResult.findMany({
       where: {
-        userId: session.user.id,
+        userId: userId,
         createdAt: {
           gte: startDate,
         },
@@ -218,7 +217,7 @@ export default async function AnalyticsPage({
     prisma.usageLog.groupBy({
       by: ['action', 'createdAt'],
       where: {
-        userId: session.user.id,
+        userId: userId,
         createdAt: {
           gte: startDate,
         },

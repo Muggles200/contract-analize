@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { 
@@ -33,10 +33,10 @@ export default async function ReportsPage({
     type?: string;
   }>;
 }) {
-  const session = await auth();
+  const { userId } = await auth();
   
-  if (!session?.user) {
-    redirect("/auth/login");
+  if (!userId) {
+    redirect("/sign-in");
   }
 
   const params = await searchParams;
@@ -74,7 +74,7 @@ export default async function ReportsPage({
 
   // Build where clause
   const where: any = {
-    userId: session.user.id,
+    userId: userId,
     createdAt: {
       gte: startDate,
       lte: endDate,
@@ -184,7 +184,7 @@ export default async function ReportsPage({
     // Scheduled reports
     prisma.scheduledReport.findMany({
       where: {
-        userId: session.user.id,
+        userId: userId,
         ...(organizationId && { organizationId }),
       },
       orderBy: { createdAt: 'desc' },
@@ -193,7 +193,7 @@ export default async function ReportsPage({
     // Report history
     prisma.reportHistory.findMany({
       where: {
-        userId: session.user.id,
+        userId: userId,
         ...(organizationId && { organizationId }),
       },
       orderBy: { createdAt: 'desc' },

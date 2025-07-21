@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
 
@@ -13,9 +13,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string; memberId: string }> }
 ) {
   try {
-    const session = await auth()
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -27,7 +27,7 @@ export async function PUT(
     const membership = await prisma.organizationMember.findFirst({
       where: {
         organizationId: id,
-        userId: session.user.id,
+        userId: userId,
         role: { in: ['owner', 'admin'] },
       },
     })
@@ -102,9 +102,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; memberId: string }> }
 ) {
   try {
-    const session = await auth()
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -114,7 +114,7 @@ export async function DELETE(
     const membership = await prisma.organizationMember.findFirst({
       where: {
         organizationId: id,
-        userId: session.user.id,
+        userId: userId,
         role: { in: ['owner', 'admin'] },
       },
     })
@@ -150,7 +150,7 @@ export async function DELETE(
     }
 
     // Prevent removing yourself if you're an admin (only owners can remove admins)
-    if (targetMembership.userId === session.user.id && membership.role === 'admin') {
+    if (targetMembership.userId === userId && membership.role === 'admin') {
       return NextResponse.json(
         { error: 'Admins cannot remove themselves' },
         { status: 400 }

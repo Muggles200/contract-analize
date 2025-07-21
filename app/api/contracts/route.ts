@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
 
@@ -16,9 +16,9 @@ const createContractSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: any = {
-      userId: session.user.id,
+      userId: userId,
       deletedAt: null,
     }
 
@@ -132,16 +132,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const { userId } = await auth();
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
     const validatedData = createContractSchema.parse(body)
 
-    if (!session.user.id) {
+    if (!userId) {
       return NextResponse.json({ error: 'User ID not found' }, { status: 400 })
     }
 
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
     const contract = await prisma.contract.create({
       data: {
         ...validatedData,
-        userId: session.user.id,
+        userId: userId,
         tags: validatedData.tags || [],
         metadata: validatedData.metadata || {},
       },

@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from '@clerk/nextjs/server';
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import GeneralSettings from "../components/GeneralSettings";
@@ -9,15 +9,13 @@ import DataExport from "../components/DataExport";
 import AccountDeletion from "../components/AccountDeletion";
 
 export default async function SettingsPage() {
-  const session = await auth();
-  
-  if (!session?.user) {
-    redirect("/auth/login");
+  const { userId } = await auth();
+  if (!userId) {
+    redirect("/sign-in");
   }
-
   // Fetch user data for settings
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: userId },
     select: {
       id: true,
       name: true,
@@ -28,9 +26,8 @@ export default async function SettingsPage() {
       updatedAt: true,
     },
   });
-
   if (!user) {
-    redirect("/auth/login");
+    redirect("/sign-in");
   }
 
   return (

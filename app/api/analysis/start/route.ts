@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { analysisQueue } from '@/lib/analysis-queue';
 import { prisma } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
     // Get user session
-    const session = await auth();
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Fetch user's organization membership
+    const membership = await prisma.organizationMember.findFirst({ where: { userId } });
+    const organizationId = membership?.organizationId;
 
     // Parse request body
     const body = await request.json();
@@ -46,8 +50,8 @@ export async function POST(request: NextRequest) {
       where: {
         id: contractId,
         OR: [
-          { userId: session.user.id },
-          { organizationId: session.user.organizationId }
+          { userId: userId },
+          { organizationId: organizationId }
         ]
       }
     });
@@ -84,8 +88,8 @@ export async function POST(request: NextRequest) {
     const analysisId = await analysisQueue.addJob(
       contractId,
       analysisType,
-      session.user.id,
-      session.user.organizationId,
+      userId,
+      organizationId,
       priority
     );
 

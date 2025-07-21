@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { 
@@ -32,10 +32,10 @@ export default async function ReportPreviewPage({
     organizationId?: string;
   }>;
 }) {
-  const session = await auth();
+  const { userId } = await auth();
   
-  if (!session?.user) {
-    redirect("/auth/login");
+  if (!userId) {
+    redirect("/sign-in");
   }
 
   const params = await searchParams;
@@ -69,7 +69,7 @@ export default async function ReportPreviewPage({
 
   // Build where clause
   const where: any = {
-    userId: session.user.id,
+    userId: userId,
     createdAt: {
       gte: startDate,
       lte: endDate,

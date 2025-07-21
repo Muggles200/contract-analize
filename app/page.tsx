@@ -10,6 +10,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import MobileMenu from "./components/MobileMenu";
+import { SignInButton, SignUpButton } from '@clerk/nextjs';
 
 export default function Home() {
   return (
@@ -50,12 +51,8 @@ export default function Home() {
 
             {/* Auth Buttons */}
             <div className="hidden md:flex items-center space-x-4">
-              <Link href="/auth/login" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">
-                Sign In
-              </Link>
-              <Link href="/auth/register" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                Get Started
-              </Link>
+              <SignInButton><button className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">Sign In</button></SignInButton>
+              <SignUpButton><button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Get Started</button></SignUpButton>
             </div>
 
             {/* Mobile menu button */}
@@ -77,10 +74,10 @@ export default function Home() {
               Identify risks, extract key clauses, and get instant insights in minutes, not hours.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/auth/register" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors flex items-center justify-center">
+              <SignUpButton><button className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold transition-colors flex items-center justify-center">
                 Start Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
+              </button></SignUpButton>
               <Link href="#features" className="border border-gray-300 hover:border-blue-600 text-gray-700 hover:text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold transition-colors">
                 See How It Works
               </Link>
@@ -459,9 +456,9 @@ export default function Home() {
             Join thousands of businesses using ContractAnalyze to save time and reduce risk.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/register" className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold transition-colors">
+            <SignUpButton><button className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold transition-colors">
               Start Free Trial
-            </Link>
+            </button></SignUpButton>
             <Link href="/contact" className="border border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold transition-colors">
               Schedule Demo
             </Link>

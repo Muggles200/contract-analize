@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { 
@@ -27,10 +27,9 @@ import QuickAnalysisActions from "./components/QuickAnalysisActions";
 import RealTimeUpdates from "./components/RealTimeUpdates";
 
 export default async function AnalysisDashboardPage() {
-  const session = await auth();
-  
-  if (!session?.user) {
-    redirect("/auth/login");
+  const { userId } = await auth();
+  if (!userId) {
+    redirect("/sign-in");
   }
 
   // Fetch analysis data
@@ -44,7 +43,7 @@ export default async function AnalysisDashboardPage() {
     // Pending analyses
     prisma.analysisResult.findMany({
       where: { 
-        userId: session.user.id,
+        userId: userId,
         status: 'PENDING'
       },
       orderBy: { createdAt: 'asc' },
@@ -62,7 +61,7 @@ export default async function AnalysisDashboardPage() {
     // Processing analyses
     prisma.analysisResult.findMany({
       where: { 
-        userId: session.user.id,
+        userId: userId,
         status: 'PROCESSING'
       },
       orderBy: { createdAt: 'asc' },
@@ -79,7 +78,7 @@ export default async function AnalysisDashboardPage() {
     
     // Recent analyses (last 10)
     prisma.analysisResult.findMany({
-      where: { userId: session.user.id },
+      where: { userId: userId },
       orderBy: { createdAt: 'desc' },
       take: 10,
       include: {
@@ -97,7 +96,7 @@ export default async function AnalysisDashboardPage() {
     prisma.analysisResult.groupBy({
       by: ['status', 'analysisType'],
       where: {
-        userId: session.user.id,
+        userId: userId,
         createdAt: {
           gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
         }
@@ -114,7 +113,7 @@ export default async function AnalysisDashboardPage() {
     // Queue statistics
     prisma.analysisResult.groupBy({
       by: ['status'],
-      where: { userId: session.user.id },
+      where: { userId: userId },
       _count: {
         id: true
       },
