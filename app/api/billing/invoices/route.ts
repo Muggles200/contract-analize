@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
+import { getStripeClient, getInvoicesForCustomer } from '@/lib/stripe';
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,46 +33,32 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // For now, return mock invoice data since we don't have Stripe fully integrated
-    // In a real implementation, you would fetch this from Stripe API
-    const mockInvoices = [
-      {
-        id: 'inv_001',
-        number: 'INV-2024-001',
-        amount: 29.00,
-        currency: 'usd',
-        status: 'paid',
-        created: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        dueDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        periodStart: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-        periodEnd: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        description: 'Basic Plan - January 2024',
-        pdfUrl: null,
-        hostedInvoiceUrl: null
-      },
-      {
-        id: 'inv_002',
-        number: 'INV-2024-002',
-        amount: 29.00,
-        currency: 'usd',
-        status: 'paid',
-        created: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-        dueDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-        periodStart: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-        periodEnd: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-        description: 'Basic Plan - December 2023',
-        pdfUrl: null,
-        hostedInvoiceUrl: null
-      }
-    ];
+    // Fetch invoices from Stripe
+    const { invoices, hasMore } = await getInvoicesForCustomer(
+      subscription.stripeCustomerId,
+      limit,
+      offset > 0 ? `inv_${offset}` : undefined
+    );
 
-    // Apply pagination
-    const paginatedInvoices = mockInvoices.slice(offset, offset + limit);
-    const hasMore = offset + limit < mockInvoices.length;
+    // Transform Stripe invoices to our format
+    const formattedInvoices = invoices.map(invoice => ({
+      id: invoice.id,
+      number: invoice.number,
+      amount: invoice.amount_paid / 100, // Convert from cents
+      currency: invoice.currency,
+      status: invoice.status,
+      created: new Date(invoice.created * 1000).toISOString(),
+      dueDate: invoice.due_date ? new Date(invoice.due_date * 1000).toISOString() : null,
+      periodStart: invoice.period_start ? new Date(invoice.period_start * 1000).toISOString() : null,
+      periodEnd: invoice.period_end ? new Date(invoice.period_end * 1000).toISOString() : null,
+      description: invoice.description || 'Invoice for subscription',
+      pdfUrl: invoice.invoice_pdf,
+      hostedInvoiceUrl: invoice.hosted_invoice_url,
+    }));
 
     return NextResponse.json({
-      invoices: paginatedInvoices,
-      total: mockInvoices.length,
+      invoices: formattedInvoices,
+      total: invoices.length,
       hasMore
     });
   } catch (error) {

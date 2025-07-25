@@ -1,6 +1,7 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
+import { calculateAnalyticsTrends, calculateTimeSeriesData, calculatePerformanceTrends } from "@/lib/analytics-trends";
 import { 
   BarChart3, 
   TrendingUp, 
@@ -66,6 +67,28 @@ export default async function AnalyticsPage({
     where.organizationId = organizationId;
   }
 
+  // Calculate real trends
+  const trends = await calculateAnalyticsTrends({
+    userId: session.user.id,
+    organizationId: organizationId || undefined,
+    period: period as 'week' | 'month' | 'year',
+    compareWith: 'previous',
+  });
+
+  // Calculate time series data
+  const timeSeriesData = await calculateTimeSeriesData({
+    userId: session.user.id,
+    organizationId: organizationId || undefined,
+    period: period as 'week' | 'month' | 'year',
+  });
+
+  // Calculate performance trends
+  const performanceTrends = await calculatePerformanceTrends({
+    userId: session.user.id,
+    organizationId: organizationId || undefined,
+    period: period as 'week' | 'month' | 'year',
+  });
+
   // Fetch analytics data
   const [
     overviewData,
@@ -73,7 +96,6 @@ export default async function AnalyticsPage({
     costData,
     contractTypes,
     commonRisks,
-    timeSeriesData
   ] = await Promise.all([
     // Overview data
     prisma.$transaction([
@@ -116,9 +138,9 @@ export default async function AnalyticsPage({
         _count: {
           action: true,
         },
-        orderBy: {
-          action: 'asc',
-        },
+        orderBy: [
+          { action: 'asc' }
+        ],
       }),
     ]),
 
@@ -187,9 +209,9 @@ export default async function AnalyticsPage({
       _count: {
         contractType: true,
       },
-      orderBy: {
-        contractType: 'asc',
-      },
+      orderBy: [
+        { contractType: 'asc' }
+      ],
     }),
 
     // Common risks
@@ -227,9 +249,9 @@ export default async function AnalyticsPage({
       _count: {
         action: true,
       },
-      orderBy: {
-        createdAt: 'asc',
-      },
+      orderBy: [
+        { createdAt: 'asc' }
+      ],
     }),
   ]);
 
@@ -244,15 +266,7 @@ export default async function AnalyticsPage({
     }
   }));
 
-  // Process time series data
-  const timeSeriesProcessed = timeSeriesData.reduce((acc, item) => {
-    const date = item.createdAt.toISOString().split('T')[0];
-    if (!acc[date]) {
-      acc[date] = {};
-    }
-    acc[date][item.action] = item._count.action;
-    return acc;
-  }, {} as Record<string, Record<string, number>>);
+
 
   // Process common risks
   const riskData = commonRisks.reduce((acc, analysis) => {
@@ -276,6 +290,7 @@ export default async function AnalyticsPage({
       contractsThisPeriod,
       analysesThisPeriod,
       usageStats: transformedUsageStats,
+      trends,
     },
     performance: {
       _avg: {
@@ -291,6 +306,7 @@ export default async function AnalyticsPage({
       _count: {
         id: performanceData._count.id,
       },
+      trends: performanceTrends,
     },
     cost: {
       _sum: {
@@ -303,13 +319,17 @@ export default async function AnalyticsPage({
       _count: {
         id: costData._count.id,
       },
+      trends: {
+        costs: trends.costs,
+      },
     },
     contractTypes,
     commonRisks: Object.entries(riskData)
       .map(([type, count]) => ({ type, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10),
-    timeSeries: timeSeriesProcessed,
+    timeSeries: timeSeriesData,
+    trends,
     period,
     startDate,
     endDate: now,

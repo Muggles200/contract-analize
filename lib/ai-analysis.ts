@@ -1,9 +1,27 @@
 import OpenAI from 'openai';
+import { resolve } from 'path';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Load environment variables from .env.local
+try {
+  require('dotenv').config({ path: resolve(process.cwd(), '.env.local') });
+} catch (error) {
+  console.log('⚠️ Could not load .env.local file:', (error as Error).message);
+}
+
+// Initialize OpenAI client lazily
+let openai: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable is required');
+    }
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openai;
+}
 
 export interface AnalysisRequest {
   contractId: string;
@@ -1395,7 +1413,7 @@ export class AIAnalysisService {
     const prompt = this.preparePrompt(promptTemplate, request);
     const optimizedPrompt = this.optimizePromptForCost(prompt, this.getMaxTokens(request.analysisType));
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAIClient().chat.completions.create({
       model: 'gpt-4.1-2025-04-14', // Latest model with better performance and lower cost
       messages: [
         {
@@ -1423,7 +1441,7 @@ export class AIAnalysisService {
    */
   private async extractMetadataWithFunctionCalling(request: AnalysisRequest): Promise<any> {
     try {
-      const completion = await openai.chat.completions.create({
+      const completion = await getOpenAIClient().chat.completions.create({
         model: 'gpt-4.1-2025-04-14', // Latest model for better metadata extraction
         messages: [
           {
@@ -1468,7 +1486,7 @@ export class AIAnalysisService {
    */
   private async calculateRiskScoreWithFunctionCalling(request: AnalysisRequest): Promise<any> {
     try {
-      const completion = await openai.chat.completions.create({
+      const completion = await getOpenAIClient().chat.completions.create({
         model: 'gpt-4.1-2025-04-14', // Latest model for better risk assessment
         messages: [
           {
@@ -1513,7 +1531,7 @@ export class AIAnalysisService {
    */
   private async validateClauseCompletenessWithFunctionCalling(request: AnalysisRequest): Promise<any> {
     try {
-      const completion = await openai.chat.completions.create({
+      const completion = await getOpenAIClient().chat.completions.create({
         model: 'gpt-4.1-2025-04-14', // Latest model for better clause validation
         messages: [
           {
@@ -2286,7 +2304,7 @@ export class AIAnalysisService {
     try {
       const prompt = this.createChunkAnalysisPrompt(chunk, request);
       
-      const completion = await openai.chat.completions.create({
+      const completion = await getOpenAIClient().chat.completions.create({
         model: 'gpt-4o-mini-2024-07-18', // Much more cost-effective for chunk analysis
         messages: [
           {
@@ -2545,7 +2563,7 @@ ${content.substring(0, 2000)}
 
 Respond with only: low, medium, or high`;
 
-      const completion = await openai.chat.completions.create({
+      const completion = await getOpenAIClient().chat.completions.create({
         model: 'gpt-4o-mini-2024-07-18', // Use mini for simple importance analysis
         messages: [
           {
@@ -2894,7 +2912,7 @@ Focus on accuracy and completeness while maintaining high confidence scores for 
     const combinedSummaries = summaries.join('\n\n');
     
     try {
-      const completion = await openai.chat.completions.create({
+      const completion = await getOpenAIClient().chat.completions.create({
         model: 'gpt-4.1-2025-04-14', // Use main model for important summary consolidation
         messages: [
           {

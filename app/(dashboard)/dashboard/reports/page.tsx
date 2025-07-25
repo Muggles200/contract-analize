@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { 
@@ -133,9 +133,9 @@ export default async function ReportsPage({
       _count: {
         action: true,
       },
-      orderBy: {
-        createdAt: 'asc',
-      },
+      orderBy: [
+        { createdAt: 'asc' }
+      ],
     }),
 
     // Cost data

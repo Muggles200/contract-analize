@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
+import { 
+  generatePDFReport, 
+  generatePDFWithPuppeteer, 
+  generateHTMLTemplate,
+  fetchReportData,
+  ExportOptions 
+} from '@/lib/export-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { template, dateRange, reportType, organizationId } = body;
+    const { template, dateRange, reportType, organizationId, usePuppeteer = false } = body;
 
     // Validate required parameters
     if (!template || !dateRange || !reportType) {
@@ -20,32 +27,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // In a real implementation, this would:
-    // 1. Fetch the report data from the database
-    // 2. Generate a PDF using a library like puppeteer, jsPDF, or similar
-    // 3. Return the PDF as a blob or stream
+    // Validate date range
+    if (!dateRange.start || !dateRange.end) {
+      return NextResponse.json(
+        { error: 'Invalid date range' },
+        { status: 400 }
+      );
+    }
 
-    // For now, we'll simulate PDF generation
-    console.log('Generating PDF report:', {
+    const options: ExportOptions = {
+      format: 'pdf',
       template,
       dateRange,
       reportType,
-      organizationId,
       userId: session.user.id,
-    });
+      organizationId
+    };
 
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Fetch real report data
+    const reportData = await fetchReportData(options);
 
-    // Return a mock PDF response
-    const mockPdfContent = `Mock PDF content for ${template} report (${dateRange}, ${reportType})`;
-    const pdfBuffer = Buffer.from(mockPdfContent, 'utf-8');
+    let pdfBuffer: Buffer;
+
+    if (usePuppeteer) {
+      // Generate PDF using Puppeteer for more complex layouts
+      const htmlContent = generateHTMLTemplate(reportData, options);
+      pdfBuffer = await generatePDFWithPuppeteer(htmlContent, options);
+    } else {
+      // Generate PDF using jsPDF for simpler layouts
+      pdfBuffer = await generatePDFReport(reportData, options);
+    }
+
+    const filename = `${template}-report-${dateRange.start}-${dateRange.end}-${reportType}.pdf`;
 
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${template}-report-${dateRange}-${reportType}.pdf"`,
+        'Content-Disposition': `attachment; filename="${filename}"`,
         'Content-Length': pdfBuffer.length.toString(),
       },
     });

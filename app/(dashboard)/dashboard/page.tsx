@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { 
@@ -80,9 +80,9 @@ export default async function DashboardPage() {
       _count: {
         action: true
       },
-      orderBy: {
-        action: 'asc'
-      }
+      orderBy: [
+        { action: 'asc' }
+      ]
     })
   ]);
 

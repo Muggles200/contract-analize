@@ -325,7 +325,7 @@ export class AnalysisService {
   async analyzeContract(contractId: string, options: AnalysisOptions): Promise<AnalysisResult> {
     try {
       // Get contract data
-      const contract = await this.db.contract.findUnique({
+      const contract = await this.prisma.contract.findUnique({
         where: { id: contractId },
         include: { file: true }
       });
@@ -345,7 +345,7 @@ export class AnalysisService {
       const analysis = await this.performAIAnalysis(segments, options);
 
       // Store results
-      const result = await this.db.analysisResult.create({
+      const result = await this.prisma.analysisResult.create({
         data: {
           contractId,
           userId: contract.userId,

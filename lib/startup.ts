@@ -1,4 +1,6 @@
-import { analysisQueue } from './analysis-queue';
+import { prisma } from './db';
+import { initializeQueues, shutdownQueues } from './job-queue';
+import './job-worker'; // Import to start job workers
 
 /**
  * Initialize application services on startup
@@ -7,19 +9,37 @@ export async function initializeServices() {
   try {
     console.log('🚀 Initializing application services...');
 
-    // Start the analysis queue processor
-    analysisQueue.start();
-    console.log('✅ Analysis queue processor started');
+    // Test database connection
+    await prisma.$connect();
+    console.log('✅ Database connection established');
 
-    // Set up periodic cleanup (every 24 hours)
+    // Initialize job queues
+    initializeQueues();
+    console.log('✅ Job queues initialized');
+
+    // Set up periodic cleanup jobs (every 24 hours)
     setInterval(async () => {
       try {
-        const cleanedCount = await analysisQueue.cleanupOldJobs(30); // 30 days
-        if (cleanedCount > 0) {
-          console.log(`🧹 Cleaned up ${cleanedCount} old analysis jobs`);
+        const { cleanupQueue, JOB_TYPES } = await import('./job-queue');
+        
+        // Schedule cleanup jobs only if queue is available
+        if (cleanupQueue) {
+          await cleanupQueue.add(JOB_TYPES.CLEANUP_EXPIRED_EXPORTS, {
+            type: 'cleanup-expired-exports',
+            options: { retentionDays: 30 },
+          });
+
+          await cleanupQueue.add(JOB_TYPES.CLEANUP_OLD_ACTIVITY_LOGS, {
+            type: 'cleanup-old-activity-logs',
+            options: { retentionDays: 90 },
+          });
+
+          console.log('🧹 Scheduled periodic cleanup jobs');
+        } else {
+          console.log('⚠️ Cleanup queue not available, skipping scheduled jobs');
         }
       } catch (error) {
-        console.error('Error during cleanup:', error);
+        console.error('Error scheduling cleanup jobs:', error);
       }
     }, 24 * 60 * 60 * 1000); // 24 hours
 
@@ -38,9 +58,13 @@ export async function shutdownServices() {
   try {
     console.log('🛑 Shutting down application services...');
 
-    // Stop the analysis queue processor
-    analysisQueue.stop();
-    console.log('✅ Analysis queue processor stopped');
+    // Shutdown job queues
+    await shutdownQueues();
+    console.log('✅ Job queues shut down');
+
+    // Close database connection
+    await prisma.$disconnect();
+    console.log('✅ Database connection closed');
 
     console.log('✅ Application services shut down successfully');
 

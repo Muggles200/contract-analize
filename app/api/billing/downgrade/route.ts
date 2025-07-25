@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import Stripe from 'stripe';
+import { auth } from '@/auth';
+
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-06-30.basil',
+    })
+  : null;
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,36 +36,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No active subscription found' }, { status: 404 });
     }
 
-    // For now, return success since Stripe is not fully integrated
-    // In a real implementation, you would call Stripe API to change the subscription
-    
-    // Update subscription in database
-    await prisma.subscription.update({
-      where: { id: currentSubscription.id },
-      data: {
-        stripePriceId: `price_${planId}_monthly`,
-        updatedAt: new Date()
-      }
-    });
+    if (!currentSubscription.stripeSubscriptionId) {
+      return NextResponse.json({ error: 'No Stripe subscription found' }, { status: 404 });
+    }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Subscription downgraded successfully',
-      planId
-    });
+    if (!stripe) {
+      return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
+    }
 
-    // Real Stripe implementation would look like this:
-    /*
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-    
-    const subscription = await stripe.subscriptions.update(
-      currentSubscription.stripeSubscriptionId!,
+    // Update subscription in Stripe
+    const subscription = await stripe?.subscriptions.update(
+      currentSubscription.stripeSubscriptionId,
       {
         items: [{
-          id: currentSubscription.stripeSubscriptionId!,
+          id: currentSubscription.stripeSubscriptionId,
           price: `price_${planId}_monthly`,
         }],
         proration_behavior: 'create_prorations',
+        metadata: {
+          userId: session.user.id,
+          planId: planId,
+        },
       }
     );
 
@@ -74,9 +72,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Subscription downgraded successfully',
+      planId,
       subscription: subscription
     });
-    */
   } catch (error) {
     console.error('Error downgrading subscription:', error);
     return NextResponse.json(

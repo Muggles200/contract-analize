@@ -117,15 +117,34 @@ export default function PasswordChange() {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Password changed successfully!' });
+        setMessage({ 
+          type: 'success', 
+          text: data.message || 'Password changed successfully! You will be logged out for security.' 
+        });
+        
+        // Clear form
         setFormData({
           currentPassword: '',
           newPassword: '',
           confirmPassword: '',
         });
         setPasswordStrength({ score: 0, feedback: '' });
+
+        // If session invalidation is required, redirect to login after a delay
+        if (data.requiresReauth) {
+          setTimeout(() => {
+            // Sign out and redirect to login
+            router.push('/auth/login?message=password_changed');
+          }, 3000);
+        }
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to change password' });
+        // Handle specific error cases
+        if (data.details && Array.isArray(data.details)) {
+          const errorDetails = data.details.map((detail: any) => detail.message).join(', ');
+          setMessage({ type: 'error', text: `Password validation failed: ${errorDetails}` });
+        } else {
+          setMessage({ type: 'error', text: data.error || 'Failed to change password' });
+        }
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'An error occurred while changing your password' });

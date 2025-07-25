@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import Stripe from 'stripe';
+import { auth } from '@/auth';
+
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-06-30.basil',
+    })
+  : null;
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,30 +29,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No active subscription found' }, { status: 404 });
     }
 
-    // For now, update the subscription to cancel at period end
-    // In a real implementation, you would call Stripe API to cancel the subscription
-    
-    await prisma.subscription.update({
-      where: { id: currentSubscription.id },
-      data: {
-        cancelAtPeriodEnd: true,
-        updatedAt: new Date()
-      }
-    });
+    if (!currentSubscription.stripeSubscriptionId) {
+      return NextResponse.json({ error: 'No Stripe subscription found' }, { status: 404 });
+    }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Subscription will be canceled at the end of the current billing period'
-    });
+    if (!stripe) {
+      return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
+    }
 
-    // Real Stripe implementation would look like this:
-    /*
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-    
+    // Cancel subscription in Stripe
     const subscription = await stripe.subscriptions.update(
-      currentSubscription.stripeSubscriptionId!,
+      currentSubscription.stripeSubscriptionId,
       {
         cancel_at_period_end: true,
+        metadata: {
+          userId: session.user.id,
+          canceledAt: new Date().toISOString(),
+        },
       }
     );
 
@@ -63,7 +63,6 @@ export async function POST(request: NextRequest) {
       message: 'Subscription will be canceled at the end of the current billing period',
       subscription: subscription
     });
-    */
   } catch (error) {
     console.error('Error canceling subscription:', error);
     return NextResponse.json(

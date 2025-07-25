@@ -252,8 +252,8 @@ const FilePreview: React.FC<FilePreviewProps> = ({
 // app/api/contracts/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import { auth } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { auth } from '@/auth';
+import { prisma } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -278,7 +278,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Save to database
-    const contract = await db.contract.create({
+    const contract = await prisma.contract.create({
       data: {
         userId: session.user.id,
         fileName: file.name,

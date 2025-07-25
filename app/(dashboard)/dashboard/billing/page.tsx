@@ -1,4 +1,3 @@
-import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { 
   CreditCard, 
@@ -19,6 +18,7 @@ import UsageLimits from "./components/UsageLimits";
 import BillingHistory from "./components/BillingHistory";
 import PlanComparison from "./components/PlanComparison";
 import PaymentMethods from "./components/PaymentMethods";
+import { auth } from "@/auth";
 
 export default async function BillingDashboardPage() {
   const session = await auth();

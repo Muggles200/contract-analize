@@ -1,7 +1,7 @@
 'use client';
 
 import { Bell, CheckCircle, AlertTriangle, Info, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Notification {
   id: string;
@@ -10,35 +10,9 @@ interface Notification {
   message: string;
   timestamp: Date;
   read: boolean;
+  source?: 'in-app' | 'browser' | 'push';
+  data?: any;
 }
-
-// Mock notifications - in a real app, these would come from the database
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    type: 'success',
-    title: 'Analysis Complete',
-    message: 'Your contract analysis has been completed successfully.',
-    timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-    read: false
-  },
-  {
-    id: '2',
-    type: 'info',
-    title: 'New Feature Available',
-    message: 'Try our new comprehensive analysis feature for deeper insights.',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-    read: false
-  },
-  {
-    id: '3',
-    type: 'warning',
-    title: 'Storage Warning',
-    message: 'You\'re approaching your storage limit. Consider upgrading your plan.',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-    read: true
-  }
-];
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -71,18 +45,87 @@ const getNotificationColor = (type: Notification['type']) => {
 };
 
 export default function NotificationsPanel() {
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  // Fetch notifications on component mount
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/notifications?limit=20');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications');
+      }
+      
+      const data = await response.json();
+      
+      // Convert timestamp strings to Date objects
+      const formattedNotifications = data.notifications.map((notification: any) => ({
+        ...notification,
+        timestamp: new Date(notification.timestamp),
+      }));
+      
+      setNotifications(formattedNotifications);
+      setUnreadCount(data.unreadCount);
+    } catch (err) {
+      setError('Failed to load notifications');
+      console.error('Error fetching notifications:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const dismissNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  const markAsRead = async (id: string) => {
+    try {
+      const response = await fetch(`/api/notifications/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'read' }),
+      });
+
+      if (response.ok) {
+        setNotifications(prev => 
+          prev.map(n => n.id === id ? { ...n, read: true } : n)
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      console.error('Error marking notification as read:', err);
+    }
+  };
+
+  const dismissNotification = async (id: string) => {
+    try {
+      const response = await fetch(`/api/notifications/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'dismiss' }),
+      });
+
+      if (response.ok) {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        // Update unread count if the dismissed notification was unread
+        const dismissedNotification = notifications.find(n => n.id === id);
+        if (dismissedNotification && !dismissedNotification.read) {
+          setUnreadCount(prev => Math.max(0, prev - 1));
+        }
+      }
+    } catch (err) {
+      console.error('Error dismissing notification:', err);
+    }
   };
 
   const formatTimeAgo = (date: Date) => {
@@ -99,6 +142,47 @@ export default function NotificationsPanel() {
     return `${diffInDays}d ago`;
   };
 
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center space-x-2">
+            <Bell className="w-5 h-5 text-gray-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
+          </div>
+        </div>
+        <div className="p-6 text-center text-gray-500">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-2">Loading notifications...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center space-x-2">
+            <Bell className="w-5 h-5 text-gray-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
+          </div>
+        </div>
+        <div className="p-6 text-center text-gray-500">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-300" />
+          <p className="text-lg font-medium text-red-600">Error loading notifications</p>
+          <p className="text-sm">{error}</p>
+          <button
+            onClick={fetchNotifications}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg border border-gray-200">
       <div className="p-6 border-b border-gray-200">
@@ -112,6 +196,12 @@ export default function NotificationsPanel() {
               </span>
             )}
           </div>
+          <button
+            onClick={fetchNotifications}
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+          >
+            Refresh
+          </button>
         </div>
       </div>
       
@@ -145,6 +235,11 @@ export default function NotificationsPanel() {
                         </h3>
                         {!notification.read && (
                           <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                        )}
+                        {notification.source && (
+                          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                            {notification.source}
+                          </span>
                         )}
                       </div>
                       <p className="text-sm text-gray-600 mt-1">
@@ -183,7 +278,10 @@ export default function NotificationsPanel() {
       
       {notifications.length > 0 && (
         <div className="p-4 border-t border-gray-200">
-          <button className="w-full text-sm text-blue-600 hover:text-blue-700 font-medium">
+          <button 
+            onClick={fetchNotifications}
+            className="w-full text-sm text-blue-600 hover:text-blue-700 font-medium"
+          >
             View all notifications
           </button>
         </div>

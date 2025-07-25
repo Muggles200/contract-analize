@@ -1,5 +1,14 @@
 #!/usr/bin/env tsx
 
+import { resolve } from 'path';
+
+// Load environment variables from .env.local
+try {
+  require('dotenv').config({ path: resolve(process.cwd(), '.env.local') });
+} catch (error) {
+  console.log('⚠️ Could not load .env.local file:', (error as Error).message);
+}
+
 import * as fs from 'fs';
 
 // Now import the AI service after environment is loaded

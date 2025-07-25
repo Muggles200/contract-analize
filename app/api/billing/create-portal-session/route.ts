@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import Stripe from 'stripe';
+import { auth } from '@/auth';
+
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-06-30.basil',
+    })
+  : null;
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,37 +17,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // For now, return a mock portal session since Stripe is not fully integrated
-    // In a real implementation, you would create a Stripe customer portal session here
-    
-    const mockPortalUrl = `https://billing.stripe.com/session/${Math.random().toString(36).substring(2, 15)}`;
-
-    return NextResponse.json({
-      url: mockPortalUrl
-    });
-
-    // Real Stripe implementation would look like this:
-    /*
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-    
     // Get customer ID from subscription
     const subscription = await prisma.subscription.findFirst({
-      where: { userId: session.user.id }
+      where: { 
+        userId: session.user.id,
+        status: { in: ['active', 'trialing', 'past_due', 'canceled'] }
+      }
     });
     
     if (!subscription?.stripeCustomerId) {
       return NextResponse.json({ error: 'No subscription found' }, { status: 404 });
     }
+
+    if (!stripe) {
+      return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
+    }
     
-    const session = await stripe.billingPortal.sessions.create({
+    const portalSession = await stripe.billingPortal.sessions.create({
       customer: subscription.stripeCustomerId,
       return_url: `${process.env.NEXTAUTH_URL}/dashboard/billing`,
+      configuration: process.env.STRIPE_PORTAL_CONFIGURATION_ID,
     });
 
     return NextResponse.json({
-      url: session.url
+      url: portalSession.url
     });
-    */
   } catch (error) {
     console.error('Error creating portal session:', error);
     return NextResponse.json(

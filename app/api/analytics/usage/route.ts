@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
@@ -59,9 +59,9 @@ export async function GET(request: NextRequest) {
       _count: {
         action: true,
       },
-      orderBy: {
-        createdAt: 'asc',
-      },
+      orderBy: [
+        { createdAt: 'asc' }
+      ],
     })
 
     // Get contract type distribution

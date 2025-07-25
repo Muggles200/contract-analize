@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 

@@ -8,43 +8,45 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum AnalysisStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-  CANCELLED
-}
-
 model User {
-  id            String          @id @default(cuid())
-  name          String?
-  email         String          @unique
-  password      String?
-  emailVerified DateTime?
-  image         String?
-  verificationToken String?     @unique
-  verificationExpires DateTime?
-  resetToken    String?         @unique
-  resetExpires  DateTime?
-  accounts      Account[]
-  sessions      Session[]
-  // Optional for WebAuthn support
-  Authenticator Authenticator[]
-
-  // Relations to other models
-  organizationMemberships OrganizationMember[]
-  subscriptions           Subscription[]
-  contracts               Contract[]
+  id                      String                    @id @default(cuid())
+  name                    String?
+  email                   String                    @unique
+  password                String?
+  emailVerified           DateTime?
+  image                   String?
+  verificationToken       String?                   @unique
+  verificationExpires     DateTime?
+  resetToken              String?                   @unique
+  resetExpires            DateTime?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  accountDeletion         AccountDeletion?
+  accounts                Account[]
   analysisResults         AnalysisResult[]
-  usageLogs               UsageLog[]
   analyticsEvents         AnalyticsEvent[]
-  userActivities          UserActivity[]
-  scheduledReports        ScheduledReport[]
+  Authenticator           Authenticator[]
+  contracts               Contract[]
+  notificationHistory     NotificationHistory[]
+  organizationMemberships OrganizationMember[]
+  pushTokens              PushToken[]
   reportHistory           ReportHistory[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  scheduledReports        ScheduledReport[]
+  sessions                Session[]
+  subscriptions           Subscription[]
+  usageLogs               UsageLog[]
+  userActivities          UserActivity[]
+  emailPreferences        UserEmailPreferences?
+  notificationSettings    UserNotificationSettings?
+  preferences             UserPreferences?
+  privacySettings         UserPrivacySettings?
+  securitySettings        UserSecuritySettings?
+  dataExportRequests      DataExportRequest[]
+  notifications           Notification[]
+  passwordHistory         PasswordHistory[]
+  twoFactorBackupCodes    TwoFactorBackupCode[]
+  securityAuditLogs       SecurityAuditLog[]
+  deviceSessions          DeviceSession[]
 
   @@index([email])
   @@index([createdAt])
@@ -52,7 +54,7 @@ model User {
   @@index([resetToken])
   @@map("users")
 }
- 
+
 model Account {
   userId            String
   type              String
@@ -65,43 +67,41 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
- 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
- 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@id([provider, providerAccountId])
   @@index([userId])
   @@index([provider, providerAccountId])
   @@map("accounts")
 }
- 
+
 model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
+  userAgent    String?
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([expires])
   @@map("sessions")
 }
- 
+
 model VerificationToken {
   identifier String
   token      String
   expires    DateTime
- 
+
   @@id([identifier, token])
   @@index([expires])
   @@map("verification_tokens")
 }
- 
-// Optional for WebAuthn support
+
 model Authenticator {
   credentialID         String  @unique
   userId               String
@@ -111,36 +111,32 @@ model Authenticator {
   credentialDeviceType String
   credentialBackedUp   Boolean
   transports           String?
- 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+  user                 User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@id([userId, credentialID])
   @@index([userId])
   @@map("authenticators")
 }
 
-// Organization model
 model Organization {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  logoUrl     String?
-  settings    Json     @default("{}")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
-
-  // Relations
-  members         OrganizationMember[]
-  contracts       Contract[]
-  analysisResults AnalysisResult[]
-  usageLogs       UsageLog[]
-  subscriptions   Subscription[]
-  analyticsEvents AnalyticsEvent[]
-  userActivities  UserActivity[]
-  scheduledReports ScheduledReport[]
+  id               String               @id @default(cuid())
+  name             String
+  slug             String               @unique
+  description      String?
+  logoUrl          String?
+  settings         Json                 @default("{}")
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  deletedAt        DateTime?
+  analysisResults  AnalysisResult[]
+  analyticsEvents  AnalyticsEvent[]
+  contracts        Contract[]
+  members          OrganizationMember[]
   reportHistory    ReportHistory[]
+  scheduledReports ScheduledReport[]
+  subscriptions    Subscription[]
+  usageLogs        UsageLog[]
+  userActivities   UserActivity[]
 
   @@index([slug])
   @@index([createdAt])
@@ -148,16 +144,13 @@ model Organization {
   @@map("organizations")
 }
 
-// Organization members with roles
 model OrganizationMember {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
   userId         String
-  role           String   @default("member")
-  permissions    Json     @default("[]")
-  joinedAt       DateTime @default(now())
-
-  // Relations
+  role           String       @default("member")
+  permissions    Json         @default("[]")
+  joinedAt       DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -169,24 +162,21 @@ model OrganizationMember {
   @@map("organization_members")
 }
 
-// Subscription model for billing
 model Subscription {
-  id                     String    @id @default(cuid())
-  userId                 String
-  organizationId         String?
-  stripeCustomerId       String?
-  stripeSubscriptionId   String?
-  stripePriceId          String?
-  status                 String
-  currentPeriodStart     DateTime?
-  currentPeriodEnd       DateTime?
-  cancelAtPeriodEnd      Boolean   @default(false)
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
-
-  // Relations
-  user                   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization           Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id                   String        @id @default(cuid())
+  userId               String
+  organizationId       String?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  stripePriceId        String?
+  status               String
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean       @default(false)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  organization         Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([organizationId])
@@ -199,29 +189,26 @@ model Subscription {
   @@map("subscriptions")
 }
 
-// Contract model
 model Contract {
-  id             String    @id @default(cuid())
-  userId         String
-  organizationId String?
-  fileName       String
-  fileSize       BigInt
-  fileType       String
-  blobUrl        String
-  status         String    @default("pending")
-  contractName   String?
-  contractType   String?
-  tags           String[]
-  metadata       Json?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  deletedAt      DateTime?
-
-  // Relations
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization   Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id              String           @id @default(cuid())
+  userId          String
+  organizationId  String?
+  fileName        String
+  fileSize        BigInt
+  fileType        String
+  blobUrl         String
+  status          String           @default("pending")
+  contractName    String?
+  contractType    String?
+  tags            String[]
+  metadata        Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
   analysisResults AnalysisResult[]
-  contractFiles  ContractFile[]
+  contractFiles   ContractFile[]
+  organization    Organization?    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([organizationId])
@@ -242,41 +229,38 @@ model Contract {
   @@map("contracts")
 }
 
-// Analysis results model
 model AnalysisResult {
-  id                String    @id @default(cuid())
-  contractId        String
-  userId            String
-  organizationId    String?
-  status            AnalysisStatus    @default(PENDING)
-  analysisType      String    @default("basic")
-  priority          String    @default("normal")
-  progress          Int       @default(0)
-  retryCount        Int       @default(0)
-  maxRetries        Int       @default(3)
-  customParameters  Json?
-  results           Json?
-  summary           String?
-  totalClauses      Int?
-  totalRisks        Int?
+  id                   String         @id @default(cuid())
+  contractId           String
+  userId               String
+  organizationId       String?
+  status               AnalysisStatus @default(PENDING)
+  analysisType         String         @default("basic")
+  priority             String         @default("normal")
+  progress             Int            @default(0)
+  retryCount           Int            @default(0)
+  maxRetries           Int            @default(3)
+  customParameters     Json?
+  results              Json?
+  summary              String?
+  totalClauses         Int?
+  totalRisks           Int?
   totalRecommendations Int?
-  highRiskCount     Int?
-  criticalRiskCount Int?
-  processingTime    Int?
-  tokensUsed        Int?
-  estimatedCost     Decimal?  @db.Decimal(10, 4)
-  modelUsed         String?
-  confidenceScore   Decimal?  @db.Decimal(3, 2)
-  errorMessage      String?
-  startedAt         DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  completedAt       DateTime?
-
-  // Relations
-  contract          Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization      Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  highRiskCount        Int?
+  criticalRiskCount    Int?
+  processingTime       Int?
+  tokensUsed           Int?
+  estimatedCost        Decimal?       @db.Decimal(10, 4)
+  modelUsed            String?
+  confidenceScore      Decimal?       @db.Decimal(3, 2)
+  errorMessage         String?
+  startedAt            DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  completedAt          DateTime?
+  contract             Contract       @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  organization         Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([contractId])
   @@index([userId])
@@ -296,9 +280,8 @@ model AnalysisResult {
   @@map("analysis_results")
 }
 
-// Usage logs model
 model UsageLog {
-  id             String    @id @default(cuid())
+  id             String        @id @default(cuid())
   userId         String
   organizationId String?
   action         String
@@ -307,11 +290,9 @@ model UsageLog {
   metadata       Json?
   ipAddress      String?
   userAgent      String?
-  createdAt      DateTime  @default(now())
-
-  // Relations
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([organizationId])
@@ -327,22 +308,19 @@ model UsageLog {
   @@map("usage_logs")
 }
 
-// File storage models
 model ContractFile {
-  id             String    @id @default(cuid())
-  contractId     String
-  fileName       String
-  filePath       String
-  fileSize       BigInt
-  mimeType       String
-  checksum       String?
-  isProcessed    Boolean   @default(false)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  // Relations
-  contract       Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  fileMetadata   FileMetadata?
+  id           String        @id @default(cuid())
+  contractId   String
+  fileName     String
+  filePath     String
+  fileSize     BigInt
+  mimeType     String
+  checksum     String?
+  isProcessed  Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  contract     Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  fileMetadata FileMetadata?
 
   @@index([contractId])
   @@index([isProcessed])
@@ -354,19 +332,17 @@ model ContractFile {
 }
 
 model FileMetadata {
-  id              String    @id @default(cuid())
-  contractFileId  String    @unique
-  extractedText   String?
-  pageCount       Int?
-  language        String?
-  ocrConfidence   Decimal?  @db.Decimal(3, 2)
-  processingStatus String   @default("pending")
-  errorMessage    String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  // Relations
-  contractFile    ContractFile @relation(fields: [contractFileId], references: [id], onDelete: Cascade)
+  id               String       @id @default(cuid())
+  contractFileId   String       @unique
+  extractedText    String?
+  pageCount        Int?
+  language         String?
+  ocrConfidence    Decimal?     @db.Decimal(3, 2)
+  processingStatus String       @default("pending")
+  errorMessage     String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  contractFile     ContractFile @relation(fields: [contractFileId], references: [id], onDelete: Cascade)
 
   @@index([processingStatus])
   @@index([language])
@@ -375,9 +351,8 @@ model FileMetadata {
   @@map("file_metadata")
 }
 
-// Analytics models
 model AnalyticsEvent {
-  id             String    @id @default(cuid())
+  id             String        @id @default(cuid())
   userId         String?
   organizationId String?
   eventType      String
@@ -387,11 +362,9 @@ model AnalyticsEvent {
   referrer       String?
   userAgent      String?
   ipAddress      String?
-  timestamp      DateTime  @default(now())
-
-  // Relations
-  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
-  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  timestamp      DateTime      @default(now())
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  user           User?         @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([organizationId])
@@ -409,18 +382,16 @@ model AnalyticsEvent {
 }
 
 model UserActivity {
-  id             String    @id @default(cuid())
+  id             String        @id @default(cuid())
   userId         String
   organizationId String?
   activityType   String
   description    String?
   metadata       Json?
-  duration       Int?      // in seconds
-  createdAt      DateTime  @default(now())
-
-  // Relations
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  duration       Int?
+  createdAt      DateTime      @default(now())
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([organizationId])
@@ -437,12 +408,12 @@ model UserActivity {
 }
 
 model PerformanceMetric {
-  id             String    @id @default(cuid())
-  metricName     String
-  metricValue    Decimal   @db.Decimal(10, 4)
-  metricUnit     String?
-  context        Json?
-  timestamp      DateTime  @default(now())
+  id          String   @id @default(cuid())
+  metricName  String
+  metricValue Decimal  @db.Decimal(10, 4)
+  metricUnit  String?
+  context     Json?
+  timestamp   DateTime @default(now())
 
   @@index([metricName])
   @@index([timestamp])
@@ -450,29 +421,26 @@ model PerformanceMetric {
   @@map("performance_metrics")
 }
 
-// Report models
 model ScheduledReport {
-  id             String    @id @default(cuid())
+  id             String        @id @default(cuid())
   userId         String
   organizationId String?
   name           String
   description    String?
   template       String
   reportType     String
-  frequency      String    // daily, weekly, monthly, quarterly
-  dayOfWeek      Int?      // 0-6 for weekly reports
-  dayOfMonth     Int?      // 1-31 for monthly reports
-  timeOfDay      String?   // HH:MM format
-  recipients     Json?     // Array of email addresses
-  isActive       Boolean   @default(true)
+  frequency      String
+  dayOfWeek      Int?
+  dayOfMonth     Int?
+  timeOfDay      String?
+  recipients     Json?
+  isActive       Boolean       @default(true)
   lastRunAt      DateTime?
   nextRunAt      DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  // Relations
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([organizationId])
@@ -485,24 +453,22 @@ model ScheduledReport {
 }
 
 model ReportHistory {
-  id             String    @id @default(cuid())
+  id             String        @id @default(cuid())
   userId         String
   organizationId String?
   reportName     String
   template       String
   reportType     String
-  dateRange      Json?     // { start: Date, end: Date }
+  dateRange      Json?
   filePath       String?
   fileSize       BigInt?
-  downloadCount  Int       @default(0)
-  status         String    @default("completed") // completed, failed, processing
+  downloadCount  Int           @default(0)
+  status         String        @default("completed")
   errorMessage   String?
   metadata       Json?
-  createdAt      DateTime  @default(now())
-
-  // Relations
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([organizationId])
@@ -514,4 +480,358 @@ model ReportHistory {
   @@index([userId, createdAt])
   @@index([organizationId, createdAt])
   @@map("report_history")
-} 
+}
+
+model UserEmailPreferences {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  marketing Boolean  @default(true)
+  security  Boolean  @default(true)
+  analysis  Boolean  @default(true)
+  billing   Boolean  @default(true)
+  weekly    Boolean  @default(false)
+  frequency String   @default("immediate")
+  timezone  String?  @default("UTC")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("user_email_preferences")
+}
+
+model UserNotificationSettings {
+  id                         String    @id @default(cuid())
+  userId                     String    @unique
+  browser                    Boolean   @default(true)
+  email                      Boolean   @default(true)
+  push                       Boolean   @default(false)
+  analysisComplete           Boolean   @default(true)
+  newFeatures                Boolean   @default(true)
+  securityAlerts             Boolean   @default(true)
+  billingUpdates             Boolean   @default(true)
+  weeklyDigest               Boolean   @default(false)
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  browserPermission          String?   @default("default")
+  browserPermissionUpdatedAt DateTime?
+  quietHours                 Json?
+  soundEnabled               Boolean   @default(true)
+  vibrationEnabled           Boolean   @default(true)
+  user                       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("user_notification_settings")
+}
+
+model UserPreferences {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  timezone      String   @default("UTC")
+  language      String   @default("en")
+  dateFormat    String   @default("MM/DD/YYYY")
+  timeFormat    String   @default("12h")
+  theme         String   @default("system")
+  autoSave      Boolean  @default(true)
+  showTutorials Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("user_preferences")
+}
+
+model UserPrivacySettings {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  dataSharing            Boolean  @default(false)
+  analytics              Boolean  @default(true)
+  marketing              Boolean  @default(false)
+  dataRetention          Int      @default(365) // days
+  gdprCompliance         Boolean  @default(true)
+  dataPortability        Boolean  @default(true)
+  rightToBeForgotten     Boolean  @default(true)
+  privacyPolicyAccepted  Boolean  @default(false)
+  privacyPolicyAcceptedAt DateTime?
+  dataProcessingConsent  Json     @default("{\"necessary\":true,\"analytics\":false,\"marketing\":false,\"thirdParty\":false}")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("user_privacy_settings")
+}
+
+model DataExportRequest {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String    // "full", "contracts", "analyses", "settings", "gdpr-portability"
+  status      String    @default("pending") // "pending", "processing", "completed", "failed", "expired"
+  dataTypes   Json      // Array of data types to export
+  dateRange   Json?     // Optional date range filter
+  format      String    @default("json") // "json", "csv", "pdf"
+  fileUrl     String?
+  fileSize    Int?      // File size in bytes
+  expiresAt   DateTime? // When the export file expires
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("data_export_requests")
+}
+
+model JobLog {
+  id          String   @id @default(cuid())
+  queueName   String
+  jobId       String
+  jobType     String
+  status      String   // 'pending', 'active', 'completed', 'failed', 'stalled'
+  error       String?
+  data        Json?
+  attempts    Int      @default(0)
+  duration    Int?     // Duration in milliseconds
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([queueName])
+  @@index([jobType])
+  @@index([status])
+  @@index([createdAt])
+  @@map("job_logs")
+}
+
+model Notification {
+  id           String    @id @default(cuid())
+  userId       String
+  type         String    // 'in-app', 'browser', 'push'
+  title        String
+  message      String
+  data         Json?
+  status       String    @default("unread") // 'unread', 'read', 'dismissed'
+  scheduledFor DateTime?
+  readAt       DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model AnalyticsReport {
+  id           String   @id @default(cuid())
+  type         String   // 'daily', 'weekly', 'monthly'
+  data         Json
+  generatedAt  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([type])
+  @@index([generatedAt])
+  @@map("analytics_reports")
+}
+
+model HealthCheck {
+  id        String   @id @default(cuid())
+  status    String   // 'healthy', 'unhealthy'
+  details   Json
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([timestamp])
+  @@map("health_checks")
+}
+
+model UserSecuritySettings {
+  id                           String    @id @default(cuid())
+  userId                       String    @unique
+  twoFactorEnabled             Boolean   @default(false)
+  twoFactorMethod              String    @default("totp") // "totp", "sms", "email"
+  backupCodesGenerated         Boolean   @default(false)
+  backupCodesRemaining         Int       @default(0)
+  loginNotifications           Boolean   @default(true)
+  sessionTimeout               Int       @default(30) // minutes
+  requirePasswordForChanges    Boolean   @default(true)
+  securityAuditLogs            Boolean   @default(true)
+  lastSecurityReview           DateTime?
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @updatedAt
+  user                         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("user_security_settings")
+}
+
+model TwoFactorBackupCode {
+  id           String   @id @default(cuid())
+  userId       String
+  code         String   @unique
+  isUsed       Boolean  @default(false)
+  usedAt       DateTime?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([code])
+  @@index([isUsed])
+  @@index([createdAt])
+  @@map("two_factor_backup_codes")
+}
+
+model SecurityAuditLog {
+  id              String   @id @default(cuid())
+  userId          String
+  eventType       String   // "login", "logout", "password_change", "2fa_enabled", "2fa_disabled", "session_terminated", "suspicious_activity"
+  description     String
+  ipAddress       String?
+  userAgent       String?
+  deviceFingerprint String?
+  location        String?
+  metadata        Json?
+  riskLevel       String   @default("low") // "low", "medium", "high", "critical"
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([riskLevel])
+  @@index([createdAt])
+  @@index([userId, eventType])
+  @@index([userId, riskLevel])
+  @@index([userId, createdAt])
+  @@map("security_audit_logs")
+}
+
+model DeviceSession {
+  id              String   @id @default(cuid())
+  userId          String
+  sessionToken    String   @unique
+  deviceType      String   // "web", "mobile", "desktop"
+  deviceName      String?
+  deviceId        String?
+  userAgent       String?
+  ipAddress       String?
+  location        String?
+  deviceFingerprint String?
+  isActive        Boolean  @default(true)
+  lastActive      DateTime @default(now())
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionToken])
+  @@index([deviceId])
+  @@index([isActive])
+  @@index([lastActive])
+  @@index([expiresAt])
+  @@index([userId, isActive])
+  @@map("device_sessions")
+}
+
+model PushToken {
+  id         String   @id @default(cuid())
+  userId     String
+  token      String
+  deviceType String   @default("web")
+  deviceId   String?
+  userAgent  String?
+  appVersion String?
+  osVersion  String?
+  isActive   Boolean  @default(true)
+  lastUsed   DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([deviceId])
+  @@index([isActive])
+  @@index([lastUsed])
+  @@map("push_tokens")
+}
+
+model NotificationHistory {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String
+  title       String
+  message     String
+  status      String    @default("sent")
+  metadata    Json?
+  sentAt      DateTime  @default(now())
+  deliveredAt DateTime?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([sentAt])
+  @@index([userId, type])
+  @@index([userId, status])
+  @@index([userId, sentAt])
+  @@map("notification_history")
+}
+
+model AccountDeletion {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  status          String    @default("scheduled")
+  scheduledFor    DateTime
+  reason          String?
+  cancelledAt     DateTime?
+  cancelledReason String?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([createdAt])
+  @@map("account_deletions")
+}
+
+// Password History
+model PasswordHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  // Relations
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("password_history")
+}
+
+enum AnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { Trash2, AlertTriangle, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Trash2, AlertTriangle, Eye, EyeOff, Loader2, Clock, CheckCircle } from 'lucide-react';
 
 export default function AccountDeletion() {
   const router = useRouter();
@@ -15,6 +15,34 @@ export default function AccountDeletion() {
     confirmation: '',
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [deletionStatus, setDeletionStatus] = useState<{
+    isScheduledForDeletion: boolean;
+    deletionDate?: string;
+    daysRemaining?: number;
+    reason?: string;
+    status?: string;
+    canRecover?: boolean;
+  } | null>(null);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
+
+  // Check account deletion status on component mount
+  useEffect(() => {
+    const checkDeletionStatus = async () => {
+      try {
+        const response = await fetch('/api/user/account');
+        if (response.ok) {
+          const data = await response.json();
+          setDeletionStatus(data);
+        }
+      } catch (error) {
+        console.error('Error checking deletion status:', error);
+      } finally {
+        setIsLoadingStatus(false);
+      }
+    };
+
+    checkDeletionStatus();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -45,26 +73,98 @@ export default function AccountDeletion() {
         body: JSON.stringify({
           password: formData.password,
           confirmation: formData.confirmation,
+          reason: 'User requested account deletion',
+          exportData: true,
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Account deleted successfully. Redirecting...' });
+        setMessage({ 
+          type: 'success', 
+          text: `Account scheduled for deletion. You have ${data.gracePeriodDays} days to recover your account if this was a mistake. Redirecting...` 
+        });
+        
         // Sign out and redirect after a short delay
         setTimeout(() => {
-          signOut({ callbackUrl: '/' });
-        }, 2000);
+          signOut({ callbackUrl: '/auth/login?message=account_deletion_scheduled' });
+        }, 3000);
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to delete account' });
+        setMessage({ type: 'error', text: data.error || 'Failed to schedule account deletion' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'An error occurred while deleting your account' });
+      setMessage({ type: 'error', text: 'An error occurred while scheduling account deletion' });
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Show loading state while checking deletion status
+  if (isLoadingStatus) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+        <span className="ml-2 text-gray-600">Checking account status...</span>
+      </div>
+    );
+  }
+
+  // Show account deletion status if scheduled
+  if (deletionStatus?.isScheduledForDeletion) {
+    return (
+      <div className="space-y-6">
+        {/* Account Scheduled for Deletion */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+          <div className="flex items-center">
+            <Clock className="h-5 w-5 text-yellow-600 mr-3" />
+            <div>
+              <h3 className="text-sm font-medium text-yellow-900">
+                Account Scheduled for Deletion
+              </h3>
+              <p className="text-sm text-yellow-700 mt-1">
+                Your account is scheduled to be deleted on {new Date(deletionStatus.deletionDate!).toLocaleDateString()}. 
+                You have {deletionStatus.daysRemaining} days remaining to recover your account.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Recovery Options */}
+        {deletionStatus.canRecover && (
+          <div className="bg-green-50 border border-green-200 rounded-md p-4">
+            <div className="flex items-center">
+              <CheckCircle className="h-5 w-5 text-green-600 mr-3" />
+              <div>
+                <h3 className="text-sm font-medium text-green-900">
+                  Account Recovery Available
+                </h3>
+                <p className="text-sm text-green-700 mt-1">
+                  You can still recover your account during the grace period. 
+                  Contact support or use the recovery link sent to your email.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Deletion Details */}
+        <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+          <h4 className="text-sm font-medium text-gray-900 mb-3">
+            Deletion Details:
+          </h4>
+          <div className="text-sm text-gray-600 space-y-2">
+            <p><strong>Scheduled Date:</strong> {new Date(deletionStatus.deletionDate!).toLocaleString()}</p>
+            <p><strong>Days Remaining:</strong> {deletionStatus.daysRemaining}</p>
+            <p><strong>Status:</strong> {deletionStatus.status}</p>
+            {deletionStatus.reason && (
+              <p><strong>Reason:</strong> {deletionStatus.reason}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

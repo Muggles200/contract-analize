@@ -25,6 +25,12 @@ interface AnalyticsOverviewProps {
     contractsThisPeriod: number;
     analysesThisPeriod: number;
     usageStats: UsageStat[];
+    trends?: {
+      contracts: { current: number; previous: number; change: number; percentage: number; trend: 'up' | 'down' | 'stable' };
+      analyses: { current: number; previous: number; change: number; percentage: number; trend: 'up' | 'down' | 'stable' };
+      uploads: { current: number; previous: number; change: number; percentage: number; trend: 'up' | 'down' | 'stable' };
+      views: { current: number; previous: number; change: number; percentage: number; trend: 'up' | 'down' | 'stable' };
+    };
   };
   period: string;
 }
@@ -67,12 +73,17 @@ export default function AnalyticsOverview({ data, period }: AnalyticsOverviewPro
 
   const successRate = analysesThisPeriod > 0 ? ((completedAnalyses / analysesThisPeriod) * 100).toFixed(1) : '0';
 
+  const getChangeType = (trend?: 'up' | 'down' | 'stable'): 'positive' | 'negative' | 'neutral' => {
+    if (!trend) return 'positive';
+    return trend === 'up' ? 'positive' : trend === 'down' ? 'negative' : 'neutral';
+  };
+
   const stats = [
     {
       title: "Total Contracts",
       value: data.totalContracts,
-      change: `+${data.contractsThisPeriod} ${getPeriodLabel()}`,
-      changeType: "positive" as const,
+      change: data.trends ? `${data.trends.contracts.trend === 'up' ? '+' : data.trends.contracts.trend === 'down' ? '-' : ''}${Math.abs(data.trends.contracts.percentage)}%` : `+${data.contractsThisPeriod} ${getPeriodLabel()}`,
+      changeType: getChangeType(data.trends?.contracts.trend),
       icon: FileText,
       color: "blue",
       description: "All time contracts"
@@ -80,8 +91,8 @@ export default function AnalyticsOverview({ data, period }: AnalyticsOverviewPro
     {
       title: "Total Analyses",
       value: data.totalAnalyses,
-      change: `+${data.analysesThisPeriod} ${getPeriodLabel()}`,
-      changeType: "positive" as const,
+      change: data.trends ? `${data.trends.analyses.trend === 'up' ? '+' : data.trends.analyses.trend === 'down' ? '-' : ''}${Math.abs(data.trends.analyses.percentage)}%` : `+${data.analysesThisPeriod} ${getPeriodLabel()}`,
+      changeType: getChangeType(data.trends?.analyses.trend),
       icon: Brain,
       color: "green",
       description: "All time analyses"

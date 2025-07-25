@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { 
@@ -105,10 +105,10 @@ export default async function AnalysisDashboardPage() {
       _count: {
         id: true
       },
-      orderBy: {
-        status: 'asc',
-        analysisType: 'asc'
-      }
+      orderBy: [
+        { status: 'asc' },
+        { analysisType: 'asc' }
+      ]
     }),
     
     // Queue statistics
@@ -118,9 +118,9 @@ export default async function AnalysisDashboardPage() {
       _count: {
         id: true
       },
-      orderBy: {
-        status: 'asc'
-      }
+      orderBy: [
+        { status: 'asc' }
+      ]
     })
   ]);
 

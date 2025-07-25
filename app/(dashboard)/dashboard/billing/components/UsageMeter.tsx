@@ -189,7 +189,7 @@ export default function UsageMeter() {
             <h4 className="font-semibold text-gray-900 mb-3">Usage Trend</h4>
             <div className="space-y-2">
               {usageData.history.slice(-3).reverse().map((month, index) => (
-                <div key={`${month.month}-${index}`} className="flex items-center justify-between">
+                <div key={month.month} className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">
                     {new Date(month.month + '-01').toLocaleDateString('en-US', { 
                       month: 'short', 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
+import { calculateAnalyticsTrends } from '@/lib/analytics-trends'
 
 export async function GET(request: NextRequest) {
   try {
@@ -94,9 +95,9 @@ export async function GET(request: NextRequest) {
         _count: {
           action: true,
         },
-        orderBy: {
-          action: 'asc',
-        },
+        orderBy: [
+          { action: 'asc' }
+        ],
       }),
       
       // Recent activity
@@ -110,13 +111,13 @@ export async function GET(request: NextRequest) {
       }),
     ])
 
-    // Calculate trends (mock data for now)
-    const trends = {
-      contracts: '+12%',
-      analyses: '+8%',
-      uploads: '+15%',
-      views: '+5%',
-    }
+    // Calculate real trends using analytics trends utility
+    const trends = await calculateAnalyticsTrends({
+      userId: session.user.id,
+      organizationId: organizationId || undefined,
+      period: period as 'week' | 'month' | 'year',
+      compareWith: 'previous',
+    });
 
     return NextResponse.json({
       overview: {

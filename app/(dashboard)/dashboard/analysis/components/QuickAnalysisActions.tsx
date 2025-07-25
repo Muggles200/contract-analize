@@ -154,17 +154,17 @@ export default function QuickAnalysisActions({
     }
 
     if (action === 'settings') {
-      toast.info('Analysis settings coming soon');
+      router.push('/dashboard/settings/analysis');
       return;
     }
 
     if (action === 'export') {
-      toast.info('Export functionality coming soon');
+      router.push('/dashboard/analysis/export');
       return;
     }
 
     if (action === 'batch') {
-      toast.info('Batch analysis coming soon');
+      router.push('/dashboard/analysis/batch');
       return;
     }
 

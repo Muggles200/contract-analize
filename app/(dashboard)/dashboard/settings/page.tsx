@@ -1,10 +1,9 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import GeneralSettings from "../components/GeneralSettings";
 import SecuritySettings from "../components/SecuritySettings";
 import PrivacySettings from "../components/PrivacySettings";
-import ApiKeysManagement from "../components/ApiKeysManagement";
 import DataExport from "../components/DataExport";
 import AccountDeletion from "../components/AccountDeletion";
 
@@ -68,14 +67,6 @@ export default async function SettingsPage() {
               Privacy Settings
             </h2>
             <PrivacySettings user={user} />
-          </div>
-
-          {/* API Keys Management */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
-              API Keys Management
-            </h2>
-            <ApiKeysManagement user={user} />
           </div>
 
           {/* Data Export */}

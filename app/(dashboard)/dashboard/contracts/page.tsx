@@ -190,7 +190,37 @@ export default function ContractsPage() {
           break;
         case 'export':
           // Implement export functionality
-          toast.info('Export functionality coming soon');
+          try {
+            const response = await fetch('/api/contracts/export', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                contractIds: selectedContracts,
+                format: 'csv',
+              }),
+            });
+
+            if (response.ok) {
+              const blob = await response.blob();
+              const url = window.URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `contracts-export-${new Date().toISOString().split('T')[0]}.csv`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              window.URL.revokeObjectURL(url);
+              
+              toast.success(`${selectedContracts.length} contract(s) exported successfully`);
+              setSelectedContracts([]);
+            } else {
+              throw new Error('Export failed');
+            }
+          } catch (error) {
+            toast.error('Failed to export contracts');
+          }
           break;
         default:
           break;

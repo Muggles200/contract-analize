@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Bell, Shield, Save, Loader2 } from 'lucide-react';
+import { Mail, Bell, Shield, Save, Loader2, Clock, Globe } from 'lucide-react';
 
 interface User {
   id: string;
@@ -24,11 +24,14 @@ interface EmailSettings {
   analysis: boolean;
   billing: boolean;
   weekly: boolean;
+  frequency: 'immediate' | 'daily' | 'weekly';
+  timezone: string;
 }
 
 export default function EmailPreferences({ user }: EmailPreferencesProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [settings, setSettings] = useState<EmailSettings>({
     marketing: true,
@@ -36,7 +39,28 @@ export default function EmailPreferences({ user }: EmailPreferencesProps) {
     analysis: true,
     billing: true,
     weekly: false,
+    frequency: 'immediate',
+    timezone: 'UTC',
   });
+
+  // Load email preferences on component mount
+  useEffect(() => {
+    loadEmailPreferences();
+  }, []);
+
+  const loadEmailPreferences = async () => {
+    try {
+      const response = await fetch('/api/user/email-preferences');
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(data);
+      }
+    } catch (error) {
+      console.error('Error loading email preferences:', error);
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  };
 
   const handleToggle = (key: keyof EmailSettings) => {
     setSettings(prev => ({
@@ -45,17 +69,34 @@ export default function EmailPreferences({ user }: EmailPreferencesProps) {
     }));
   };
 
+  const handleFrequencyChange = (frequency: 'immediate' | 'daily' | 'weekly') => {
+    setSettings(prev => ({
+      ...prev,
+      frequency,
+    }));
+  };
+
   const handleSave = async () => {
     setIsLoading(true);
     setMessage(null);
 
     try {
-      // In a real app, you'd have an API endpoint for email preferences
-      // For now, we'll simulate the API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/user/email-preferences', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings),
+      });
 
-      setMessage({ type: 'success', text: 'Email preferences updated successfully!' });
-      router.refresh();
+      if (response.ok) {
+        const data = await response.json();
+        setMessage({ type: 'success', text: data.message || 'Email preferences updated successfully!' });
+        router.refresh();
+      } else {
+        const errorData = await response.json();
+        setMessage({ type: 'error', text: errorData.error || 'Failed to update email preferences' });
+      }
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to update email preferences' });
     } finally {
@@ -95,6 +136,35 @@ export default function EmailPreferences({ user }: EmailPreferencesProps) {
       icon: Bell,
     },
   ];
+
+  const frequencyOptions = [
+    {
+      value: 'immediate' as const,
+      label: 'Immediate',
+      description: 'Receive emails as soon as they are sent',
+    },
+    {
+      value: 'daily' as const,
+      label: 'Daily Digest',
+      description: 'Receive a daily summary of all emails',
+    },
+    {
+      value: 'weekly' as const,
+      label: 'Weekly Digest',
+      description: 'Receive a weekly summary of all emails',
+    },
+  ];
+
+  if (isLoadingSettings) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+          <span className="ml-2 text-gray-600">Loading email preferences...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -146,9 +216,10 @@ export default function EmailPreferences({ user }: EmailPreferencesProps) {
                     <button
                       type="button"
                       onClick={() => handleToggle(option.key)}
+                      disabled={isLoading}
                       className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                         settings[option.key] ? 'bg-blue-600' : 'bg-gray-200'
-                      }`}
+                      } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <span
                         className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
@@ -161,6 +232,74 @@ export default function EmailPreferences({ user }: EmailPreferencesProps) {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Email Frequency */}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Clock className="h-5 w-5 text-gray-400" />
+          <h3 className="text-lg font-medium text-gray-900">
+            Email Frequency
+          </h3>
+        </div>
+        <p className="text-sm text-gray-600">
+          Choose how often you'd like to receive emails.
+        </p>
+
+        <div className="space-y-3">
+          {frequencyOptions.map((option) => (
+            <div key={option.value} className="flex items-center space-x-3">
+              <input
+                type="radio"
+                id={option.value}
+                name="frequency"
+                value={option.value}
+                checked={settings.frequency === option.value}
+                onChange={() => handleFrequencyChange(option.value)}
+                disabled={isLoading}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+              />
+              <div className="flex-1">
+                <label htmlFor={option.value} className="text-sm font-medium text-gray-900 cursor-pointer">
+                  {option.label}
+                </label>
+                <p className="text-sm text-gray-500">{option.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Timezone */}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Globe className="h-5 w-5 text-gray-400" />
+          <h3 className="text-lg font-medium text-gray-900">
+            Timezone
+          </h3>
+        </div>
+        <p className="text-sm text-gray-600">
+          Your timezone for email delivery timing.
+        </p>
+
+        <div>
+          <select
+            value={settings.timezone}
+            onChange={(e) => setSettings(prev => ({ ...prev, timezone: e.target.value }))}
+            disabled={isLoading}
+            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <option value="UTC">UTC</option>
+            <option value="America/New_York">Eastern Time</option>
+            <option value="America/Chicago">Central Time</option>
+            <option value="America/Denver">Mountain Time</option>
+            <option value="America/Los_Angeles">Pacific Time</option>
+            <option value="Europe/London">London</option>
+            <option value="Europe/Paris">Paris</option>
+            <option value="Asia/Tokyo">Tokyo</option>
+            <option value="Australia/Sydney">Sydney</option>
+          </select>
         </div>
       </div>
 

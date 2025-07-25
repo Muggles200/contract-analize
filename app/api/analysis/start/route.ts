@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { analysisQueue } from '@/lib/analysis-queue';
 import { prisma } from '@/lib/db';
 

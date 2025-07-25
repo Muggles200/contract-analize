@@ -214,79 +214,77 @@
 ## 👥 User Management
 
 ### 24. User Profile (`/dashboard/profile`)
-- [x] Profile information form
-- [x] Avatar upload
-- [x] Email preferences
-- [x] Notification settings
-- [x] Password change
-- [x] Account deletion
+- [ ] Profile information form
+- [ ] Avatar upload
+- [ ] Email preferences
+- [ ] Notification settings
+- [ ] Password change
+- [ ] Account deletion
 
 ### 25. Account Settings (`/dashboard/settings`)
-- [x] General settings
-- [x] Security settings
-- [x] Privacy settings
-- [x] API keys management
-- [x] Data export
-- [x] Account deletion
+- [ ] General settings
+- [ ] Security settings
+- [ ] Privacy settings
+- [ ] API keys management
+- [ ] Data export
+- [ ] Account deletion
 
 ### 26. User Components
-- [x] ProfileForm component
-- [x] AvatarUpload component
-- [x] EmailPreferences component
-- [x] NotificationSettings component
-- [x] PasswordChange component
-- [x] AccountDeletion component
+- [ ] ProfileForm component
+- [ ] AvatarUpload component
+- [ ] SettingsForm component
+- [ ] SecuritySettings component
 
 ## 🏢 Organization Management
 
 ### 27. Organizations List (`/dashboard/organizations`)
-- [x] Organizations overview
-- [x] Create organization
-- [x] Organization cards
-- [x] Quick actions
+- [ ] Organizations overview
+- [ ] Create organization
+- [ ] Organization cards
+- [ ] Quick actions
 
 ### 28. Organization Detail (`/dashboard/organizations/[id]`)
-- [x] Organization info
-- [x] Member management
-- [x] Settings
-- [x] Billing info
-- [x] Activity log
+- [ ] Organization info
+- [ ] Member management
+- [ ] Settings
+- [ ] Billing info
+- [ ] Activity log
 
 ### 29. Member Management
-- [x] Members list
-- [x] Invite members
-- [x] Role management
-- [x] Remove members
-- [x] Permission settings
+- [ ] Members list
+- [ ] Invite members
+- [ ] Role management
+- [ ] Remove members
+- [ ] Permission settings
 
 ### 30. Organization Components
-- [x] OrganizationCard component
-- [x] MemberList component
-- [x] InviteForm component
-- [x] RoleSelector component
+- [ ] OrganizationCard component
+- [ ] MemberList component
+- [ ] InviteForm component
+- [ ] RoleSelector component
 
 ## 📊 Analytics & Reporting
 
 ### 31. Analytics Dashboard (`/dashboard/analytics`)
-- [x] Usage overview
-- [x] Performance metrics
-- [x] Cost analysis
-- [x] Popular contract types
-- [x] Common risks
-- [x] Time series charts
+- [ ] Usage overview
+- [ ] Performance metrics
+- [ ] Cost analysis
+- [ ] Popular contract types
+- [ ] Common risks
+- [ ] Time series charts
 
 ### 32. Reports Page (`/dashboard/reports`)
-- [x] Report generation
-- [x] Custom date ranges
-- [x] Export options
-- [x] Scheduled reports
-- [x] Report templates
+- [ ] Report generation
+- [ ] Custom date ranges
+- [ ] Export options
+- [ ] Scheduled reports
+- [ ] Report templates
 
 ### 33. Analytics Components
-- [x] UsageChart component
-- [x] MetricsCard component
-- [x] ReportGenerator component
-- [x] DataTable component
+- [ ] UsageChart component
+- [ ] MetricsCard component
+- [ ] ReportGenerator component
+- [ ] DataTable component
 
 ## 🔧 API Routes
 
@@ -327,6 +325,10 @@
 ### 38. User Routes
 - [x] `GET /api/user/profile` - Get profile
 - [x] `PUT /api/user/profile` - Update profile
+- [x] `GET /api/user/email-preferences` - Get email preferences
+- [x] `PUT /api/user/email-preferences` - Update email preferences
+- [x] `GET /api/user/unsubscribe` - Unsubscribe from emails
+- [x] `POST /api/user/unsubscribe` - Unsubscribe from emails (API)
 - [x] `POST /api/user/change-password` - Change password
 - [x] `DELETE /api/user/account` - Delete account
 
@@ -343,12 +345,12 @@
 ### 40. Analytics Routes
 - [x] `GET /api/analytics/overview` - Get overview
 - [x] `GET /api/analytics/usage` - Get usage
-- [ ] `GET /api/analytics/reports` - Get reports
-- [ ] `POST /api/analytics/reports` - Generate report
+- [x] `GET /api/analytics/reports` - Get reports
+- [x] `POST /api/analytics/reports` - Generate report
 
 ### 41. Webhook Routes
-- [ ] `POST /api/webhooks/stripe` - Stripe webhooks
-- [ ] `POST /api/webhooks/resend` - Resend webhooks
+- [x] `POST /api/webhooks/stripe` - Stripe webhooks
+- [x] `POST /api/webhooks/resend` - Resend webhooks
 
 ## 🧩 Reusable Components
 
