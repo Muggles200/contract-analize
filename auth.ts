@@ -33,6 +33,15 @@ declare module "next-auth" {
   }
 }
 
+declare module "next-auth" {
+  interface JWT {
+    id: string
+    email: string
+    name?: string | null
+    image?: string | null
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -101,14 +110,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: "/auth/error",
   },
   callbacks: {
-    async session({ session, user }) {
-      if (user && session.user) {
-        session.user.id = user.id
+    async jwt({ token, user, account }) {
+      if (user) {
+        token.id = user.id
+        token.email = user.email
+        token.name = user.name
+        token.image = user.image
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.id as string
+        session.user.email = token.email as string
+        session.user.name = token.name as string
+        session.user.image = token.image as string
         
         // Get user's organization membership efficiently
         try {
           const membership = await prisma.organizationMember.findFirst({
-            where: { userId: user.id },
+            where: { userId: token.id as string },
             select: { organizationId: true }
           })
           if (membership) {
