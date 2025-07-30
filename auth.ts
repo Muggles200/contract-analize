@@ -126,17 +126,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.name = token.name as string
         session.user.image = token.image as string
         
-        // Get user's organization membership efficiently
-        try {
-          const membership = await prisma.organizationMember.findFirst({
-            where: { userId: token.id as string },
-            select: { organizationId: true }
-          })
-          if (membership) {
-            session.user.organizationId = membership.organizationId
+        // Get user's organization membership efficiently (server-side only)
+        if (typeof window === 'undefined') {
+          try {
+            const membership = await prisma.organizationMember.findFirst({
+              where: { userId: token.id as string },
+              select: { organizationId: true }
+            })
+            if (membership) {
+              session.user.organizationId = membership.organizationId
+            }
+          } catch (error) {
+            console.error('Error fetching user organization:', error)
           }
-        } catch (error) {
-          console.error('Error fetching user organization:', error)
         }
       }
       return session
