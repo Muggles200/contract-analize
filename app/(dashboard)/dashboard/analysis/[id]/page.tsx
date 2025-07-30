@@ -38,7 +38,7 @@ export default async function AnalysisResultsPage({ params }: PageProps) {
   const { id } = await params;
   const session = await auth();
   
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/login");
   }
 

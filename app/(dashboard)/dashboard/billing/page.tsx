@@ -23,7 +23,7 @@ import { auth } from "@/auth";
 export default async function BillingDashboardPage() {
   const session = await auth();
   
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/login");
   }
 

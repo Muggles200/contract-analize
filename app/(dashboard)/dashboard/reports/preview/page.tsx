@@ -34,7 +34,7 @@ export default async function ReportPreviewPage({
 }) {
   const session = await auth();
   
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/login");
   }
 

@@ -7,7 +7,7 @@ import BatchAnalysisStatus from "./components/BatchAnalysisStatus";
 export default async function BatchAnalysisPage() {
   const session = await auth();
   
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/login");
   }
 

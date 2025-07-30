@@ -10,7 +10,7 @@ import AccountDeletion from "../components/AccountDeletion";
 export default async function SettingsPage() {
   const session = await auth();
   
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/login");
   }
 

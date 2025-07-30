@@ -29,7 +29,7 @@ import RealTimeUpdates from "./components/RealTimeUpdates";
 export default async function AnalysisDashboardPage() {
   const session = await auth();
   
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/login");
   }
 
