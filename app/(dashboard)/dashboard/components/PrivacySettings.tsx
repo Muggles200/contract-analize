@@ -16,8 +16,11 @@ import {
   Users,
   FileText,
   Trash2,
-  Info
+  Info,
+  Settings
 } from 'lucide-react';
+
+import CookiePreferencesLink from '@/app/components/CookiePreferencesLink';
 
 interface User {
   id: string;
@@ -304,6 +307,51 @@ export default function PrivacySettings({ user }: PrivacySettingsProps) {
                 }`}
               />
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Cookie Management */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-gray-900">Cookie Management</h3>
+        <p className="text-sm text-gray-600">
+          Manage your cookie preferences and control how we track your website usage.
+        </p>
+
+        <div className="p-4 border border-gray-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Settings className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">Cookie Preferences</p>
+                <p className="text-sm text-gray-500">
+                  Control which cookies we can store and how we track your activity
+                </p>
+              </div>
+            </div>
+            <CookiePreferencesLink 
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              showIcon={true}
+            >
+              Manage Cookies
+            </CookiePreferencesLink>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+          <div className="flex items-start">
+            <Info className="h-5 w-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="text-sm font-medium text-blue-900 mb-1">Cookie Information</h4>
+              <p className="text-sm text-blue-800">
+                We use cookies to enhance your experience, analyze site usage, and assist in our marketing efforts. 
+                You can customize your cookie preferences at any time, and these settings will be synchronized 
+                with your privacy preferences above.
+              </p>
+              <p className="text-sm text-blue-800 mt-2">
+                <a href="/cookies" className="underline font-medium">Learn more about our cookie policy</a>
+              </p>
+            </div>
           </div>
         </div>
       </div>

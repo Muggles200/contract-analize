@@ -47,6 +47,7 @@ model User {
   twoFactorBackupCodes    TwoFactorBackupCode[]
   securityAuditLogs       SecurityAuditLog[]
   deviceSessions          DeviceSession[]
+  cookieConsent           CookieConsent[]
 
   @@index([email])
   @@index([createdAt])
@@ -826,6 +827,25 @@ model PasswordHistory {
   @@index([createdAt])
   @@index([userId, createdAt])
   @@map("password_history")
+}
+
+// Cookie Consent Model
+model CookieConsent {
+  id          String   @id @default(cuid())
+  userId      String
+  preferences Json     // Store cookie preferences as JSON
+  version     String   // Policy version
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("cookie_consent")
 }
 
 enum AnalysisStatus {
