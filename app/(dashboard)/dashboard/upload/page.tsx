@@ -3,9 +3,10 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Upload, X, FileText, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, X, FileText, CheckCircle, AlertCircle, Loader2, AlertTriangle } from 'lucide-react';
 import FileUpload from '../components/FileUpload';
 import ContractMetadataForm from '../components/ContractMetadataForm';
+import Link from 'next/link';
 
 interface SelectedFile {
   file: File;
@@ -358,6 +359,25 @@ export default function UploadPage() {
 
       {/* Action Buttons */}
       <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+        <div className="bg-red-50 p-4 rounded-lg mb-4 w-full">
+          <div className="flex items-start">
+            <AlertTriangle className="h-5 w-5 text-red-600 mr-3 mt-0.5" />
+            <div>
+              <p className="text-red-800 font-medium">
+                ⚠️ IMPORTANT: AI Analysis Disclaimer
+              </p>
+              <p className="text-red-700 text-sm mt-1">
+                By uploading, you consent to AI processing of your contract. 
+                <strong>The analysis results are for informational purposes only and do NOT constitute legal advice.</strong> 
+                Always consult with a qualified attorney for legal matters. See our <Link href="/privacy" className="underline">Privacy Policy</Link> for details.
+              </p>
+              <label className="flex items-center mt-3">
+                <input type="checkbox" className="mr-2" required />
+                <span className="text-sm text-red-700">I understand this is not legal advice and will consult an attorney for legal matters</span>
+              </label>
+            </div>
+          </div>
+        </div>
         <button
           onClick={handleCancel}
           disabled={isUploading}

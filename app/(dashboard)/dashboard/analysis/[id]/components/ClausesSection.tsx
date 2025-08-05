@@ -11,7 +11,8 @@ import {
   Tag,
   Star,
   Copy,
-  ExternalLink
+  ExternalLink,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -206,89 +207,108 @@ export default function ClausesSection({ clauses }: ClausesSectionProps) {
         </div>
       </div>
 
-      {/* Clauses List */}
-      <div className="space-y-4">
-        {filteredClauses.map((clause) => (
-          <div key={clause.id} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  <h3 className="text-sm font-medium text-gray-900">{clause.title}</h3>
-                  {getImportanceIcon(clause.importance)}
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getImportanceColor(clause.importance)}`}>
-                    {clause.importance.charAt(0).toUpperCase() + clause.importance.slice(1)}
-                  </span>
-                </div>
-                
-                <div className="flex items-center space-x-4 text-xs text-gray-500 mb-2">
-                  <div className="flex items-center space-x-1">
-                    {getCategoryIcon(clause.category)}
-                    <span>{clause.category}</span>
-                  </div>
-                  {clause.pageNumber && (
-                    <span>Page {clause.pageNumber}</span>
-                  )}
-                  {clause.section && (
-                    <span>Section {clause.section}</span>
-                  )}
-                </div>
-                
-                <p className="text-sm text-gray-700 mb-3">
-                  {clause.description}
-                </p>
-
-                {expandedClauses.has(clause.id) && clause.extractedText && (
-                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-gray-600">Extracted Text</span>
-                      <button
-                        onClick={() => copyToClipboard(clause.extractedText!)}
-                        className="text-xs text-blue-600 hover:text-blue-700"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-600 leading-relaxed">
-                      {clause.extractedText}
-                    </p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex items-center space-x-2 ml-4">
-                {clause.extractedText && (
-                  <button
-                    onClick={() => toggleClauseExpansion(clause.id)}
-                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                    title={expandedClauses.has(clause.id) ? 'Collapse' : 'Expand'}
-                  >
-                    {expandedClauses.has(clause.id) ? (
-                      <ChevronUp className="w-4 h-4" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4" />
-                    )}
-                  </button>
-                )}
-                <button
-                  onClick={() => copyToClipboard(clause.description)}
-                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                  title="Copy clause"
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
-              </div>
+      {/* Clauses Analysis */}
+      <div className="space-y-6">
+        {/* Legal Disclaimer for Clauses */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+          <div className="flex items-start">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 mr-3 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-yellow-900">
+                ⚠️ Clause Analysis Disclaimer
+              </p>
+              <p className="text-sm text-yellow-700 mt-1">
+                The clause analysis provided is for informational purposes only. 
+                <strong>This is not legal advice and should not replace consultation with a qualified attorney.</strong> 
+                Legal interpretation may vary by jurisdiction and specific circumstances.
+              </p>
             </div>
           </div>
-        ))}
-      </div>
-
-      {filteredClauses.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-          <p className="text-lg font-medium">No clauses found</p>
-          <p className="text-sm">Try adjusting your search or filter criteria</p>
         </div>
-      )}
+        {/* Clauses List */}
+        <div className="space-y-4">
+          {filteredClauses.map((clause) => (
+            <div key={clause.id} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <h3 className="text-sm font-medium text-gray-900">{clause.title}</h3>
+                    {getImportanceIcon(clause.importance)}
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getImportanceColor(clause.importance)}`}>
+                      {clause.importance.charAt(0).toUpperCase() + clause.importance.slice(1)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4 text-xs text-gray-500 mb-2">
+                    <div className="flex items-center space-x-1">
+                      {getCategoryIcon(clause.category)}
+                      <span>{clause.category}</span>
+                    </div>
+                    {clause.pageNumber && (
+                      <span>Page {clause.pageNumber}</span>
+                    )}
+                    {clause.section && (
+                      <span>Section {clause.section}</span>
+                    )}
+                  </div>
+                  
+                  <p className="text-sm text-gray-700 mb-3">
+                    {clause.description}
+                  </p>
+
+                  {expandedClauses.has(clause.id) && clause.extractedText && (
+                    <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-gray-600">Extracted Text</span>
+                        <button
+                          onClick={() => copyToClipboard(clause.extractedText!)}
+                          className="text-xs text-blue-600 hover:text-blue-700"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        {clause.extractedText}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-2 ml-4">
+                  {clause.extractedText && (
+                    <button
+                      onClick={() => toggleClauseExpansion(clause.id)}
+                      className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                      title={expandedClauses.has(clause.id) ? 'Collapse' : 'Expand'}
+                    >
+                      {expandedClauses.has(clause.id) ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => copyToClipboard(clause.description)}
+                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Copy clause"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredClauses.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <p className="text-lg font-medium">No clauses found</p>
+            <p className="text-sm">Try adjusting your search or filter criteria</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 } 

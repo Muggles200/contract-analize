@@ -9,7 +9,8 @@ import {
   FileJson,
   ChevronDown,
   Check,
-  Loader2
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -141,7 +142,24 @@ export default function ExportResults({ analysisId }: ExportResultsProps) {
             <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
               <div className="p-4">
                 <h3 className="text-sm font-medium text-gray-900 mb-3">Export Options</h3>
-                <div className="space-y-2">
+                <div className="space-y-6">
+                  {/* Export Legal Disclaimer */}
+                  <div className="bg-orange-50 border border-orange-200 rounded-md p-4">
+                    <div className="flex items-start">
+                      <AlertTriangle className="h-5 w-5 text-orange-600 mr-3 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-orange-900">
+                          ⚠️ Export Disclaimer
+                        </p>
+                        <p className="text-sm text-orange-700 mt-1">
+                          Exported analysis results are for informational purposes only and do not constitute legal advice. 
+                          <strong>Always consult with a qualified attorney before making legal decisions.</strong> 
+                          The exported data may contain sensitive information - handle with appropriate care.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
                   {exportFormats.map((format) => (
                     <button
                       key={format.id}
@@ -167,6 +185,7 @@ export default function ExportResults({ analysisId }: ExportResultsProps) {
                       )}
                     </button>
                   ))}
+                  </div>
                 </div>
               </div>
             </div>

@@ -13,7 +13,8 @@ import {
   BarChart3,
   AlertTriangle,
   Eye,
-  Zap
+  Zap,
+  Info
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ContractTable from '../components/ContractTable';
@@ -494,6 +495,20 @@ export default function ContractsPage() {
 
       {/* Contracts List */}
       <div className="bg-white rounded-lg border border-gray-200">
+        {/* Data Retention Warning */}
+        <div className="bg-blue-50 border-b border-blue-200 p-4">
+          <div className="flex items-center">
+            <Info className="h-5 w-5 text-blue-600 mr-3" />
+            <div>
+              <p className="text-sm font-medium text-blue-900">
+                Data Retention Notice
+              </p>
+              <p className="text-sm text-blue-700">
+                Your contracts and analysis data are retained according to your privacy settings. You can manage data retention preferences in your <a href="/dashboard/settings" className="underline">Privacy Settings</a>.
+              </p>
+            </div>
+          </div>
+        </div>
         {loading ? (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>

@@ -15,7 +15,8 @@ import {
   Activity,
   Plus,
   Filter,
-  RefreshCw
+  RefreshCw,
+  Info
 } from "lucide-react";
 import ReportGenerator from "./components/ReportGenerator";
 import ReportTemplates from "./components/ReportTemplates";
@@ -259,6 +260,22 @@ export default async function ReportsPage({
 
   return (
     <div className="space-y-6">
+      {/* Report Generation Warning */}
+      <div className="bg-red-50 border border-red-200 rounded-md p-4">
+        <div className="flex items-center">
+          <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
+          <div>
+            <p className="text-sm font-medium text-red-900">
+              ⚠️ Report Generation &amp; Legal Disclaimer
+            </p>
+            <p className="text-sm text-red-700">
+              Generated reports may contain sensitive contract information and AI analysis results. 
+              <strong>All analysis results are for informational purposes only and do NOT constitute legal advice.</strong> 
+              Always consult with a qualified attorney for legal matters. Ensure you have proper authorization before sharing reports. Reports are automatically deleted after 30 days for security.
+            </p>
+          </div>
+        </div>
+      </div>
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg p-6 text-white">
         <div className="flex items-center justify-between">

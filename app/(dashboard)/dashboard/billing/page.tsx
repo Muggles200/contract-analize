@@ -10,7 +10,8 @@ import {
   AlertTriangle,
   Infinity,
   Users,
-  Zap
+  Zap,
+  Info
 } from "lucide-react";
 import SubscriptionCard from "./components/SubscriptionCard";
 import UsageMeter from "./components/UsageMeter";
@@ -29,6 +30,20 @@ export default async function BillingDashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Billing Information Warning */}
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+        <div className="flex items-center">
+          <Info className="h-5 w-5 text-blue-600 mr-3" />
+          <div>
+            <p className="text-sm font-medium text-blue-900">
+              Billing Information
+            </p>
+            <p className="text-sm text-blue-700">
+              Plan changes take effect immediately. Downgrading may affect your current usage limits. Cancelled subscriptions remain active until the end of the current billing period.
+            </p>
+          </div>
+        </div>
+      </div>
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 text-white">
         <div className="flex items-center justify-between">

@@ -14,7 +14,8 @@ import {
   PieChart,
   LineChart,
   Calendar,
-  Target
+  Target,
+  Info
 } from "lucide-react";
 import AnalyticsOverview from "./components/AnalyticsOverview";
 import PerformanceMetrics from "./components/PerformanceMetrics";
@@ -337,6 +338,20 @@ export default async function AnalyticsPage({
 
   return (
     <div className="space-y-6">
+      {/* Analytics Data Warning */}
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+        <div className="flex items-center">
+          <Info className="h-5 w-5 text-blue-600 mr-3" />
+          <div>
+            <p className="text-sm font-medium text-blue-900">
+              Analytics Data Collection
+            </p>
+            <p className="text-sm text-blue-700">
+              Analytics data is collected to improve our services. No personal contract content is included in analytics. You can control analytics data collection in your <a href="/dashboard/settings" className="underline">Privacy Settings</a>.
+            </p>
+          </div>
+        </div>
+      </div>
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 text-white">
         <div className="flex items-center justify-between">

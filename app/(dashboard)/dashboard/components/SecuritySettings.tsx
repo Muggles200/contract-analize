@@ -481,6 +481,21 @@ export default function SecuritySettings({ user }: SecuritySettingsProps) {
               </div>
             </div>
 
+            {/* Disable 2FA Warning */}
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <div className="flex items-center">
+                <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
+                <div>
+                  <p className="text-sm font-medium text-red-900">
+                    Security Warning
+                  </p>
+                  <p className="text-sm text-red-700">
+                    Disabling two-factor authentication will reduce your account security. Only disable if absolutely necessary.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="flex space-x-4">
               <button
                 type="button"
@@ -673,6 +688,21 @@ export default function SecuritySettings({ user }: SecuritySettingsProps) {
           >
             Terminate all sessions
           </button>
+        </div>
+
+        {/* Session Termination Warning */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 mr-3" />
+            <div>
+              <p className="text-sm font-medium text-yellow-900">
+                Session Termination Warning
+              </p>
+              <p className="text-sm text-yellow-700">
+                Terminating sessions will log out all devices except your current one. This action cannot be undone.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div>

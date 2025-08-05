@@ -17,7 +17,8 @@ import {
   Calendar,
   Zap,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Info
 } from "lucide-react";
 import Link from "next/link";
 import AnalysisOverview from "./components/AnalysisOverview";
@@ -171,6 +172,22 @@ export default async function AnalysisResultsPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
+      {/* AI Processing Warning */}
+      <div className="bg-red-50 border border-red-200 rounded-md p-4">
+        <div className="flex items-center">
+          <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
+          <div>
+            <p className="text-sm font-medium text-red-900">
+              ⚠️ IMPORTANT: AI Analysis is NOT Legal Advice
+            </p>
+            <p className="text-sm text-red-700 mt-1">
+              This analysis was performed using AI technology and is for informational purposes only. 
+              <strong>This is NOT legal advice and should not be relied upon for legal decisions.</strong> 
+              Always consult with a qualified attorney for legal matters. The analysis may contain errors or omissions.
+            </p>
+          </div>
+        </div>
+      </div>
       {/* Header */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between">

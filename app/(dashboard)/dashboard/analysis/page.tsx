@@ -206,6 +206,23 @@ export default async function AnalysisDashboardPage() {
         </div>
       </div>
 
+      {/* Legal Disclaimer */}
+      <div className="bg-red-50 border border-red-200 rounded-md p-4">
+        <div className="flex items-start">
+          <AlertTriangle className="h-5 w-5 text-red-600 mr-3 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-red-900">
+              ⚠️ IMPORTANT: AI Analysis Disclaimer
+            </p>
+            <p className="text-sm text-red-700 mt-1">
+              All AI analysis results provided through this platform are for informational purposes only and do not constitute legal advice. 
+              <strong>Always consult with a qualified attorney for legal matters.</strong> 
+              The analysis may contain errors, omissions, or inaccuracies and should not be relied upon for legal decisions.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (

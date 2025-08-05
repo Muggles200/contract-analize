@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Search, Filter, MoreVertical, Users, FileText, Brain, Building } from 'lucide-react';
+import { Plus, Search, Filter, MoreVertical, Users, FileText, Brain, Building, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import CreateOrganizationModal from './components/CreateOrganizationModal';
 import OrganizationCard from './components/OrganizationCard';
@@ -174,55 +174,72 @@ export default function OrganizationsPage() {
           </div>
         </div>
 
-        {/* Organizations Grid */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-gray-200 rounded-lg mr-4"></div>
-                  <div className="flex-1">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+        {/* Organizations List */}
+        <div className="space-y-6">
+          {/* Organization Data Warning */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+            <div className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-yellow-600 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-yellow-900">
+                  Organization Data Sharing
+                </p>
+                <p className="text-sm text-yellow-700">
+                  Organization members can access shared contracts and analysis data. Ensure you trust all members before sharing sensitive information. You can manage member permissions in each organization's settings.
+                </p>
+              </div>
+            </div>
+          </div>
+          {/* Organizations Grid */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
+                  <div className="flex items-center mb-4">
+                    <div className="w-12 h-12 bg-gray-200 rounded-lg mr-4"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-gray-200 rounded"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <div className="h-3 bg-gray-200 rounded"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+              ))}
+            </div>
+          ) : filteredOrganizations.length === 0 ? (
+            <div className="text-center py-12">
+              <Building className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No organizations found</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {searchTerm ? 'Try adjusting your search terms.' : 'Get started by creating your first organization.'}
+              </p>
+              {!searchTerm && (
+                <div className="mt-6">
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Organization
+                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : filteredOrganizations.length === 0 ? (
-          <div className="text-center py-12">
-            <Building className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No organizations found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm ? 'Try adjusting your search terms.' : 'Get started by creating your first organization.'}
-            </p>
-            {!searchTerm && (
-              <div className="mt-6">
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Organization
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredOrganizations.map((organization) => (
-              <OrganizationCard
-                key={organization.id}
-                organization={organization}
-                onUpdate={fetchOrganizations}
-              />
-            ))}
-          </div>
-        )}
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredOrganizations.map((organization) => (
+                <OrganizationCard
+                  key={organization.id}
+                  organization={organization}
+                  onUpdate={fetchOrganizations}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Pagination */}
         {pagination.pages > 1 && (
